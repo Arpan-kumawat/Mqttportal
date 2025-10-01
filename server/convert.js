@@ -70,33 +70,33 @@ mqttClient.on('message', (topic, message) => {
 
 
 
-{
-  "free": 1685,             "Gateway free memory, Mega bytes"
-  "buffers": 68,             "Gateway memory buffered ,Mega bytes"
-  "cached": 996,             "Gateway memory cached , Mega bytes"
-  "active": 562,              "Gateway memory active ,Mega bytes"
-  "temperature": 53.069,       "Gateway CPU temperature 0"
-  "overall": 14.25,           "Gateway CPU overall usage %"
-  "drv_tot": 61123,           "Total drive space ,Mega bytes"
-  "drv_usd": 9.12892,         "Drive space used ,Mega bytes"
-  "uptime": "10d-22h-52m-30s",   "Gateway running time"
-  "name": "GW028",              "Gateway name N/A"
-  "latitude": 10,                "Gateway location latitude Degree",
-  "longitude": 10           ,    "Gateway location longitude Degree"
-}
+// {
+//   "free": 1685,             "Gateway free memory, Mega bytes"
+//   "buffers": 68,             "Gateway memory buffered ,Mega bytes"
+//   "cached": 996,             "Gateway memory cached , Mega bytes"
+//   "active": 562,              "Gateway memory active ,Mega bytes"
+//   "temperature": 53.069,       "Gateway CPU temperature 0"
+//   "overall": 14.25,           "Gateway CPU overall usage %"
+//   "drv_tot": 61123,           "Total drive space ,Mega bytes"
+//   "drv_usd": 9.12892,         "Drive space used ,Mega bytes"
+//   "uptime": "10d-22h-52m-30s",   "Gateway running time"
+//   "name": "GW028",              "Gateway name N/A"
+//   "latitude": 10,                "Gateway location latitude Degree",
+//   "longitude": 10           ,    "Gateway location longitude Degree"
+// }
 
-"gvib" : "General vibration level measurements from SVT200-V sensor" "size: 19"
+// "gvib" : "General vibration level measurements from SVT200-V sensor" "size: 19"
 
-"sns_info" : "Sensor information including type, id, group number,mac address, RSSI (Received Signal StrengthIndicator) and firmware version; For SVT-V series sensors, sensor information also includes temperature measurement"
+// "sns_info" : "Sensor information including type, id, group number,mac address, RSSI (Received Signal StrengthIndicator) and firmware version; For SVT-V series sensors, sensor information also includes temperature measurement"
 
 
-Sensor type                                                  Value
-SVT200-T temperature sensor                                  0x00
-SVT200-V real-time vibration & temperature sensor              0x01
-SVT300-V real-time vibration & temperature sensor              0x02
-SVT400-V real-time vibration & temperature sensor              0x03
-SVT200-A sensor acceleration                                   0x10
-SVT200-A sensor temperature                                    0x11
-SVT300-A vibration sensor acceleration                            0x20
-SVT300-A vibration sensor temperature                            0x21
-SVT400-A vibration sensor acceleration                            0x30
+// Sensor type                                                  Value
+// SVT200-T temperature sensor                                    0x00
+// SVT200-V real-time vibration & temperature sensor              0x01
+// SVT300-V real-time vibration & temperature sensor              0x02
+// SVT400-V real-time vibration & temperature sensor              0x03
+// SVT200-A sensor acceleration                                   0x10
+// SVT200-A sensor temperature                                    0x11
+// SVT300-A vibration sensor acceleration                         0x20
+// SVT300-A vibration sensor temperature                          0x21
+// SVT400-A vibration sensor acceleration                         0x30
