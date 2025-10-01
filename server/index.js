@@ -40,11 +40,8 @@ mqttClient.on('connect', () => {
     });
 });
 
-
 function parseGvibData(buf) {
-    if (buf.length !== 19) {
-        throw new Error("Invalid buffer length, expected 19 bytes");
-    }
+    if (buf.length !== 19) throw new Error("Invalid buffer length, expected 19 bytes");
 
     const sensorTypes = {
         0x00: "SVT200-T temperature sensor",
@@ -77,7 +74,6 @@ function parseGvibData(buf) {
 
     const endingByte1 = buf.readUInt8(17);
     const endingByte2 = buf.readUInt8(18);
-
     if (endingByte1 !== 0xAA || endingByte2 !== 0x0A) {
         throw new Error("Invalid ending bytes");
     }
@@ -92,20 +88,17 @@ function parseGvibData(buf) {
     };
 }
 
-
 function parseSnsInfo(buffer) {
     if (!Buffer.isBuffer(buffer) || buffer.length !== 18) {
         throw new Error('Input must be a Buffer of exactly 18 bytes');
     }
 
-    // Sensor type map
     const sensorTypeMap = {
         0x01: 'SVT200-V',
         0x02: 'SVT300-V',
         0x03: 'SVT400-V',
     };
 
-    // Read bytes
     const sensorType = buffer[0];
     const sensorId = (buffer[1] << 8) | buffer[2];
     const batteryRaw = (buffer[3] << 8) | buffer[4];
@@ -120,13 +113,10 @@ function parseSnsInfo(buffer) {
     const tempRaw = (buffer[14] << 8) | buffer[15];
     const endByte1 = buffer[16];
     const endByte2 = buffer[17];
-
-    // Validate end bytes
     if (endByte1 !== 0xAA || endByte2 !== 0x0A) {
         throw new Error('Invalid end bytes');
     }
 
-    // Calculate battery voltage based on version
     let batteryVoltage;
     if (version >= 2.7) {
         batteryVoltage = batteryRaw * 0.0014648;
@@ -134,11 +124,9 @@ function parseSnsInfo(buffer) {
         batteryVoltage = batteryRaw * 0.000879 + 0.95;
     }
 
-    // Calculate temperature with sign
     const scale = 0.0078125;
     let temperature;
     if ((tempRaw & 0x8000) === 0x8000) {
-        // Negative number: two's complement
         temperature = -((~tempRaw + 1) & 0xFFFF) * scale;
     } else {
         temperature = tempRaw * scale;
@@ -156,54 +144,27 @@ function parseSnsInfo(buffer) {
     };
 }
 
-// mqttClient.on('message', (topic, message) => {
-//     try {
-//         let dataToSend;
+// Format mqttData -> { array, unknown, gateway }
+function formatMqttData(mqttData) {
+    const array = [];
+    let unknown = null;
+    let gateway = null;
 
-//         // If the topic ends with 'GW_info' (JSON topic)
-//         if (topic.endsWith('GW_info')) {
-//             const payloadStr = message.toString();
-//             dataToSend = JSON.parse(payloadStr);  // parse JSON directly
-//         }
+    Object.values(mqttData).forEach(sensor => {
+        if (sensor.sensorId === "unknown") {
+            unknown = sensor;
+        } else if (sensor.sensorId === "gateway") {
+            gateway = sensor;
+        } else {
+            array.push(sensor);
+        }
+    });
 
-//         // If topic ends with  'gvib' (binary topics)
-//         else if (topic.endsWith('gvib')) {
-//             dataToSend = parseGvibData(message);
-//             // console.log('Parsed Data:', dataToSend);
+    // sort by sensorId
+    array.sort((a, b) => a.sensorId - b.sensorId);
 
-//         }
-
-//         // If topic ends with  'sns_info' (binary topics)
-//         else if (topic.endsWith('sns_info')) {
-//             dataToSend = parseSnsInfo(message);
-//             console.log('sns_info Data:', dataToSend);
-
-//         }
-
-//         // For all other topics or unknown payloads, send raw string
-//         else {
-//             dataToSend = message.toString();
-//         }
-
-//         mqttData = {
-//             topic,
-//             data: dataToSend,
-//             timestamp: new Date().toISOString()
-//         };
-
-//         const newMessage = JSON.stringify({ type: 'update', data: mqttData });
-
-//         clients.forEach(client => {
-//             if (client.readyState === WebSocket.OPEN) {
-//                 client.send(newMessage);
-//             }
-//         });
-
-//         console.log(`Received message on topic ${topic}:`, mqttData);
-//     } catch (error) {
-//         console.error('Error processing MQTT message:', error.message);
-//     }
-// });
+    return { array, unknown, gateway };
+}
 
 mqttClient.on('message', (topic, message) => {
     try {
@@ -212,46 +173,38 @@ mqttClient.on('message', (topic, message) => {
 
         if (topic.endsWith('GW_info')) {
             parsedData = JSON.parse(message.toString());
-            sensorId = parsedData?.sensorId || 'gateway'; // fallback if no sensorId
-        }
-        else if (topic.endsWith('gvib')) {
+            sensorId = parsedData?.sensorId || 'gateway';
+        } else if (topic.endsWith('gvib')) {
             parsedData = parseGvibData(message);
             sensorId = parsedData.sensorId;
-        }
-        else if (topic.endsWith('sns_info')) {
+        } else if (topic.endsWith('sns_info')) {
             parsedData = parseSnsInfo(message);
             sensorId = parsedData.sensorId;
-        }
-        else {
+        } else {
             parsedData = message.toString();
             sensorId = "unknown";
         }
 
         if (!sensorId) sensorId = "unknown";
 
-        // Initialize sensor object if not exists
         if (!mqttData[sensorId]) {
             mqttData[sensorId] = { sensorId };
         }
 
-        // Group data by type (gw_info, gvib, sns_info)
         if (topic.endsWith('GW_info')) {
             mqttData[sensorId].gw_info = parsedData;
-        } 
-        else if (topic.endsWith('gvib')) {
+        } else if (topic.endsWith('gvib')) {
             mqttData[sensorId].gvib = parsedData;
-        } 
-        else if (topic.endsWith('sns_info')) {
+        } else if (topic.endsWith('sns_info')) {
             mqttData[sensorId].sns_info = parsedData;
-        } 
-        else {
+        } else {
             mqttData[sensorId].raw = parsedData;
         }
 
         mqttData[sensorId].lastUpdated = new Date().toISOString();
 
-        // Send full dataset to all WS clients
-        const newMessage = JSON.stringify({ type: 'update', data: mqttData });
+        // Broadcast structured dataset
+        const newMessage = JSON.stringify({ type: 'update', data: formatMqttData(mqttData) });
         clients.forEach(client => {
             if (client.readyState === WebSocket.OPEN) {
                 client.send(newMessage);
@@ -265,15 +218,18 @@ mqttClient.on('message', (topic, message) => {
     }
 });
 
-
+// API endpoint
+app.get('/data', (req, res) => {
+    res.json(formatMqttData(mqttData));
+});
 
 // WebSocket handling
 wss.on('connection', (ws) => {
     console.log('WebSocket client connected');
     clients.push(ws);
 
-    // Send current data on connect
-    ws.send(JSON.stringify({ type: 'init', data: mqttData }));
+    // Send current structured data on connect
+    ws.send(JSON.stringify({ type: 'init', data: formatMqttData(mqttData) }));
 
     ws.on('close', () => {
         console.log('WebSocket client disconnected');
@@ -282,12 +238,6 @@ wss.on('connection', (ws) => {
     });
 });
 
-// API to return all stored messages
-app.get('/data', (req, res) => {
-    res.json(mqttData);
-});
-
-// Listen on the HTTP server, not just Express app
 server.listen(port, () => {
     console.log(`🚀 Server running at http://localhost:${port}`);
 });
