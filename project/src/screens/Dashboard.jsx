@@ -7,6 +7,10 @@ import RealtimeChart from '../components/RealtimeChart';
 import AIInsightsPanel from '../components/AIInsightsPanel';
 import { useWebSocket } from '../hooks/useWebSocket';
 import CpuMonitor from '../components/CpuMonitor';
+import PieCharts from "../components/PieChart"
+
+import Map from '../components/Map';
+import MyMap from '../components/Map';
 
 const Dashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -17,7 +21,7 @@ const Dashboard = () => {
     { id: 'overview', label: 'Overview' },
     // { id: 'business', label: 'Metrics' },
     { id: 'sensors', label: 'Sensor Data' },
-    { id: 'ai-predictions', label: 'AI Predictions' }
+    // { id: 'ai-predictions', label: 'AI Predictions' }
   ];
 
   const getCurrentValue = (type) => {
@@ -121,7 +125,7 @@ const Dashboard = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 <MetricCard
                   title="CPU usage"
-                  value={`$${getCurrentValue('revenue').toLocaleString()}`}
+                  value={`${getCurrentValue('revenue').toLocaleString()}`}
                   change={getChangePercentage('revenue')}
                   // icon={<DollarSign className="h-6 w-6 text-white" />}
                   color="bg-green-500"
@@ -148,7 +152,7 @@ const Dashboard = () => {
                   anomaly={getAnomalies('orders').length > 0}
                 />
                 <MetricCard
-                  title="Total memory"
+                  title="Total Drive"
                   value={`${getCurrentValue('conversion').toFixed(1)}%`}
                   change={getChangePercentage('conversion')}
                   icon={<TrendingUp className="h-6 w-6 text-white" />}
@@ -203,22 +207,37 @@ const Dashboard = () => {
                 <AIInsightsPanel aiInsights={aiInsights} />
               </div> */}
 
-              {/* <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <RealtimeChart
-                  data={data.temperature}
-                  title="Temperature Monitoring"
-                  color="#ef4444"
-                  format="temperature"
-                  anomalies={getAnomalies('temperature')}
-                />
-                <RealtimeChart
-                  data={data.vibration}
-                  title="Vibration Analysis"
-                  color="#f59e0b"
-                  format="vibration"
-                  anomalies={getAnomalies('vibration')}
-                />
-              </div> */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+              <div    className="lg:col-span-2">
+
+          
+  <RealtimeChart
+    data={data.temperature}
+    title="CPU Usage with Memory(drive)"
+    color="#ef4444"
+    format="temperature"
+    anomalies={getAnomalies('temperature')}
+ 
+  />
+      </div>
+  <CpuMonitor className="lg:col-span-1" />
+</div>
+
+
+
+  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div    className="lg:col-span-2">
+               <MyMap/>
+                </div>
+             
+            
+                <div className="lg:col-span-1">
+
+          
+                <PieCharts/>
+                 </div>
+              </div>
+
             </>
           )}
 

@@ -15,7 +15,7 @@ const Sidebar = ({ isOpen, onClose,setMenuPage }) => {
     { icon: BarChart3, label: 'Analytics' },
     // { icon: Brain, label: 'AI Predictions' },
     { icon: History, label: 'History' },
-    // { icon: Users, label: 'Users' },
+    { icon: Users, label: 'Users' },
     // { icon: ShoppingCart, label: 'Orders' },
     { icon: Thermometer, label: 'Sensors Info' },
     { icon: Laptop, label: 'Gateway Setup' },
@@ -86,7 +86,7 @@ const Sidebar = ({ isOpen, onClose,setMenuPage }) => {
           <div className="bg-gradient-to-r from-slate-800 to-slate-700 rounded-lg p-3 border border-slate-600">
             <div className="flex items-center gap-2 mb-2">
               <div className="h-2 w-2 bg-green-400 rounded-full animate-pulse"></div>
-              <span className="text-sm font-medium">AI System Active</span>
+              <span className="text-sm font-medium">System Active</span>
             </div>
             <div className="flex items-center gap-2 mb-1">
               <Zap className="h-3 w-3 text-purple-400" />

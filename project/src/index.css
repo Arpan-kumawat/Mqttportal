@@ -1,3 +1,9 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+
+.leaflet-bottom {
+
+    display: none !important;
+}
