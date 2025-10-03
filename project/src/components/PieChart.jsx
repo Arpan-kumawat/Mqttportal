@@ -9,15 +9,14 @@ import React from 'react'
 // } from "recharts";
 import { Chart } from "react-google-charts";
 
-export default function PieCharts() {
+export default function PieCharts({value}) {
 
   const data = [
     ["Task", "Hours per Day"],
-    ["buffer", 9],
-    ["cached", 2],
-    ["active", 2],
-  
-    ["free", 7],
+    ["Buffer", value?.gateway?.buffers,],
+     ["Active", value?.gateway?.active,],
+    ["Cached", value?.gateway?.cached,],
+    ["Free", value?.gateway?.free,],
   ];
 
   const options = {

@@ -1,7 +1,7 @@
 import React from "react";
 import ReactSpeedometer from "react-d3-speedometer";
 
-const CpuMonitor = () => {
+const CpuMonitor = ({data}) => {
   return (
        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow"> 
           <div className="flex items-center justify-between mb-4">
@@ -30,7 +30,7 @@ const CpuMonitor = () => {
         <ReactSpeedometer
           minValue={0}
           maxValue={100}
-          value={12.25}
+          value={data}
           needleColor="red"
           needleTransition=""
           startColor="#22c55e"
@@ -40,7 +40,7 @@ const CpuMonitor = () => {
           segments={10}
           height={250}
           width={250}
-          currentValueText="11.00 %"
+          currentValueText={data ? `${data}%` : 'N/A'}
           textColor="black"
         />
 

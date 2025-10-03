@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { DollarSign, Users, ShoppingCart, TrendingUp, Thermometer, Activity, Zap } from 'lucide-react';
+import { Cpu, Users, HardDrive, Database, Thermometer, Activity, Zap } from 'lucide-react';
 import Header from '../layout/Header';
 import Sidebar from '../layout/Sidebar';
 import MetricCard from '../components/MetricCard';
@@ -19,43 +19,45 @@ const Dashboard = () => {
 
   const tabs = [
     { id: 'overview', label: 'Overview' },
-    // { id: 'business', label: 'Metrics' },
-    { id: 'sensors', label: 'Sensor Data' },
+       { id: 'sensors', label: 'Sensor Data' },
+     { id: 'Health', label: 'Health Metrics' },
+ 
     // { id: 'ai-predictions', label: 'AI Predictions' }
   ];
 
   const getCurrentValue = (type) => {
-    const latestData = data[type];
+    const latestData = data[type] || [];
     return latestData.length > 0 ? latestData[latestData.length - 1].value : 0;
   };
 
   const getChangePercentage = (type) => {
     const latestData = data[type];
     if (latestData.length < 2) return 0;
-    
+
     const current = latestData[latestData.length - 1].value;
     const previous = latestData[latestData.length - 2].value;
     return ((current - previous) / previous) * 100;
   };
 
   const getPrediction = (type) => {
-    const predictions = data.predictions[type];
+    const predictions = data.predictions[type] || [];
     return predictions.length > 0 ? predictions[0] : null;
   };
 
   const getAnomalies = (type) => {
-    return data.anomalies.filter(anomaly => 
-      data[type].some(point => point.timestamp === anomaly.timestamp)
+    const series = data[type] || [];
+    return data.anomalies.filter(anomaly =>
+      series.some(point => point.timestamp === anomaly.timestamp)
     );
   };
 
   return (
 
-          <> 
-          {/* Status Indicator */}
-          <div className="mb-6 border-b">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4 text-sm">
+    <>
+      {/* Status Indicator */}
+      <div className="mb-6 border-b">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4 text-sm">
 
 
             <div className="border-b border-gray-200">
@@ -77,27 +79,26 @@ const Dashboard = () => {
                 ))}
               </nav>
             </div>
-      
 
-                {/* <div className="flex items-center gap-2">
-                  <div className={`h-2 w-2 rounded-full ${isConnected ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`}></div>
-                  <span className="text-gray-600">
-                    {isConnected ? 'Live data streaming' : 'Connection lost'}
-                  </span>
-                </div> */}
-                {/* <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2">
+              <div className={`h-2 w-2 rounded-full ${isConnected ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`}></div>
+              <span className="text-gray-600">
+                {isConnected ? 'Live data streaming' : 'Connection lost'}
+              </span>
+            </div>
+            {/* <div className="flex items-center gap-2">
                   <Zap className="h-4 w-4 text-purple-500" />
                   <span className="text-purple-600 font-medium">AI Analysis Active</span>
                 </div> */}
-              </div>
-              <div className="text-sm text-gray-500">
-                Last update: {new Date().toLocaleTimeString()}
-              </div>
-            </div>
           </div>
+          <div className="text-sm text-gray-500">
+             Gateway Up time: {data?.gateway?.uptime}
+          </div>
+        </div>
+      </div>
 
-          {/* Tabs */}
-          {/* <div className="mb-6">
+      {/* Tabs */}
+      {/* <div className="mb-6">
             <div className="border-b border-gray-200">
               <nav className="-mb-px flex space-x-8 overflow-x-auto">
                 {tabs.map((tab) => (
@@ -119,53 +120,51 @@ const Dashboard = () => {
             </div>
           </div> */}
 
-          {activeTab === 'overview' && (
-            <>
-              {/* Business Metrics Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                <MetricCard
-                  title="CPU usage"
-                  value={`${getCurrentValue('revenue').toLocaleString()}`}
-                  change={getChangePercentage('revenue')}
-                  // icon={<DollarSign className="h-6 w-6 text-white" />}
-                  color="bg-green-500"
-                  prediction={getPrediction('revenue')}
-                  anomaly={getAnomalies('revenue').length > 0}
-                />
-            
-                <MetricCard
-                  title="Temprature"
-                  value={getCurrentValue('users').toLocaleString()}
-                  change={getChangePercentage('users')}
-                  icon={<Users className="h-6 w-6 text-white" />}
-                  color="bg-blue-500"
-                  prediction={getPrediction('users')}
-                  anomaly={getAnomalies('users').length > 0}
-                />
-                <MetricCard
-                  title="Memory"
-                  value={getCurrentValue('orders').toLocaleString()}
-                  change={getChangePercentage('orders')}
-                  icon={<ShoppingCart className="h-6 w-6 text-white" />}
-                  color="bg-purple-500"
-                  prediction={getPrediction('orders')}
-                  anomaly={getAnomalies('orders').length > 0}
-                />
-                <MetricCard
-                  title="Total Drive"
-                  value={`${getCurrentValue('conversion').toFixed(1)}%`}
-                  change={getChangePercentage('conversion')}
-                  icon={<TrendingUp className="h-6 w-6 text-white" />}
-                  color="bg-orange-500"
-                  prediction={getPrediction('conversion')}
-                  anomaly={getAnomalies('conversion').length > 0}
-                />
-           
-                 
-              </div>
+      {activeTab === 'overview' && (
+        <>
+          {/* Business Metrics Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <MetricCard
+              title="CPU usage"
+              value={`${getCurrentValue('gateway.overall').toLocaleString()}%`}
+              change={0}
+              icon={<Cpu className="h-6 w-6 text-white" />}
+              color="bg-green-500"
+              prediction={getPrediction('gateway.overall')}
+              anomaly={getAnomalies('gateway.overall').length > 0}
+            />
+            <MetricCard
+              title="Gateway Temp"
+              value={`${getCurrentValue('gateway.temperature').toFixed(3)}°C`}
+              change={0}
+              icon={<Thermometer className="h-6 w-6 text-white" />}
+              color="bg-red-500"
+              anomaly={getAnomalies('gateway.temperature').length > 0}
+            />
+            <MetricCard
+              title="Active Memory"
+              value={getCurrentValue('gateway.active').toLocaleString()}
+              change={0}
+              icon={<HardDrive className="h-6 w-6 text-white" />}
+              color="bg-purple-500"
+              prediction={getPrediction('gateway.active')}
+              anomaly={getAnomalies('gateway.active').length > 0}
+            />
+            <MetricCard
+              title="Total Drive Used"
+              value={`${getCurrentValue('gateway.drv_usd').toFixed(2)} GB`}
+              change={0}
+              icon={<Database className="h-6 w-6 text-white" />}
+              color="bg-orange-500"
+              prediction={getPrediction('gateway.drv_usd')}
+              anomaly={getAnomalies('gateway.drv_usd').length > 0}
+            />
 
-              {/* Sensor Metrics Cards */}
-              {/* <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+
+          </div>
+
+          {/* Sensor Metrics Cards */}
+          {/* <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
                 <MetricCard
                   title="Temperature"
                   value={`${getCurrentValue('temperature').toFixed(1)}°C`}
@@ -192,8 +191,8 @@ const Dashboard = () => {
                 />
               </div> */}
 
-              {/* Charts and AI Insights */}
-              {/* <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+          {/* Charts and AI Insights */}
+          {/* <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
                 <div className="lg:col-span-2">
                   <RealtimeChart
                     data={data.revenue}
@@ -207,124 +206,136 @@ const Dashboard = () => {
                 <AIInsightsPanel aiInsights={aiInsights} />
               </div> */}
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-              <div    className="lg:col-span-2">
-
-          
-  <RealtimeChart
-    data={data.temperature}
-    title="CPU Usage with Memory(drive)"
-    color="#ef4444"
-    format="temperature"
-    anomalies={getAnomalies('temperature')}
- 
-  />
-      </div>
-  <CpuMonitor className="lg:col-span-1" />
-</div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <div className="lg:col-span-2">
 
 
-
-  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div    className="lg:col-span-2">
-               <MyMap/>
-                </div>
-             
-            
-                <div className="lg:col-span-1">
-
-          
-                <PieCharts/>
-                 </div>
-              </div>
-
-            </>
-          )}
-
-          {activeTab === 'business' && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <RealtimeChart
-                data={data.revenue}
-                title="Revenue Analytics with Predictions"
-                color="#10b981"
-                format="currency"
-                predictions={data.predictions.revenue}
-                anomalies={getAnomalies('revenue')}
-              />
-              <RealtimeChart
-                data={data.users}
-                title="User Analytics with Predictions"
-                color="#3b82f6"
-                format="number"
-                predictions={data.predictions.users}
-                anomalies={getAnomalies('users')}
-              />
-              <RealtimeChart
-                data={data.orders}
-                title="Order Analytics with Predictions"
-                color="#8b5cf6"
-                format="number"
-                predictions={data.predictions.orders}
-                anomalies={getAnomalies('orders')}
-              />
-              <RealtimeChart
-                data={data.conversion}
-                title="Conversion Rate with Predictions"
-                color="#f59e0b"
-                format="percentage"
-                predictions={data.predictions.conversion}
-                anomalies={getAnomalies('conversion')}
-              />
-            </div>
-          )}
-
-          {activeTab === 'sensors' && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <RealtimeChart
-                data={data.temperature}
-                title="Temperature Sensor Data"
+                data={data.gateway}
+                title="CPU Usage with Temperature"
                 color="#ef4444"
                 format="temperature"
                 anomalies={getAnomalies('temperature')}
-              />
-              <RealtimeChart
-                data={data.vibration}
-                title="Vibration Sensor Data"
-                color="#f59e0b"
-                format="vibration"
-                anomalies={getAnomalies('vibration')}
-              />
-              <RealtimeChart
-                data={data.acceleration}
-                title="Acceleration Sensor Data"
-                color="#6366f1"
-                format="acceleration"
-                anomalies={getAnomalies('acceleration')}
-              />
-            </div>
-          )}
 
-          {activeTab === 'ai-predictions' && (
-            <div className="space-y-6">
-              <AIInsightsPanel aiInsights={aiInsights} />
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {Object.entries(data.predictions).map(([metric, predictions]) => (
-                  predictions.length > 0 && (
-                    <RealtimeChart
-                      key={metric}
-                      data={data[metric]}
-                      title={`${metric.charAt(0).toUpperCase() + metric.slice(1)} Predictions`}
-                      color="#8b5cf6"
-                      format={metric === 'revenue' ? 'currency' : metric === 'conversion' ? 'percentage' : 'number'}
-                      predictions={predictions}
-                      anomalies={getAnomalies(metric)}
-                    />
-                  )
-                ))}
-              </div>
+              />
             </div>
-          )}
-      </>
+            <CpuMonitor data={getCurrentValue('gateway.overall')} className="lg:col-span-1" />
+          </div>
+
+
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2">
+              <MyMap data={data} />
+            </div>
+
+
+            <div className="lg:col-span-1">
+
+
+              <PieCharts value={data} />
+            </div>
+          </div>
+
+        </>
+      )}
+
+      {activeTab === 'business' && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <RealtimeChart
+            data={data.revenue}
+            title="Revenue Analytics with Predictions"
+            color="#10b981"
+            format="currency"
+            predictions={data.predictions.revenue}
+            anomalies={getAnomalies('revenue')}
+          />
+          <RealtimeChart
+            data={data.users}
+            title="User Analytics with Predictions"
+            color="#3b82f6"
+            format="number"
+            predictions={data.predictions.users}
+            anomalies={getAnomalies('users')}
+          />
+          <RealtimeChart
+            data={data.orders}
+            title="Order Analytics with Predictions"
+            color="#8b5cf6"
+            format="number"
+            predictions={data.predictions.orders}
+            anomalies={getAnomalies('orders')}
+          />
+          <RealtimeChart
+            data={data.conversion}
+            title="Conversion Rate with Predictions"
+            color="#f59e0b"
+            format="percentage"
+            predictions={data.predictions.conversion}
+            anomalies={getAnomalies('conversion')}
+          />
+        </div>
+      )}
+
+      {activeTab === 'sensors' && (
+        <>
+
+           <select >
+           <option value={"all"}>All Sensors</option>
+            {data?.sensor?.list?.map((item)=>
+               <option value={item?.sensorId}>Sensor {item?.sensorId}</option>
+            )}
+ 
+   
+    </select>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+         
+          <RealtimeChart
+            data={data.temperature}
+            title="Temperature Sensor Data"
+            color="#ef4444"
+            format="temperature"
+            anomalies={getAnomalies('temperature')}
+          />
+          <RealtimeChart
+            data={data.vibration}
+            title="Vibration Sensor Data"
+            color="#f59e0b"
+            format="vibration"
+            anomalies={getAnomalies('vibration')}
+          />
+          <RealtimeChart
+            data={data.acceleration}
+            title="Acceleration Sensor Data"
+            color="#6366f1"
+            format="acceleration"
+            anomalies={getAnomalies('acceleration')}
+          />
+        </div>
+        </>
+      )}
+
+      {activeTab === 'ai-predictions' && (
+        <div className="space-y-6">
+          <AIInsightsPanel aiInsights={aiInsights} />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {Object.entries(data.predictions).map(([metric, predictions]) => (
+              predictions.length > 0 && (
+                <RealtimeChart
+                  key={metric}
+                  data={data[metric]}
+                  title={`${metric.charAt(0).toUpperCase() + metric.slice(1)} Predictions`}
+                  color="#8b5cf6"
+                  format={metric === 'revenue' ? 'currency' : metric === 'conversion' ? 'percentage' : 'number'}
+                  predictions={predictions}
+                  anomalies={getAnomalies(metric)}
+                />
+              )
+            ))}
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 

@@ -53,6 +53,9 @@ export const useWebSocket = () => {
     temperature: [],
     vibration: [],
     acceleration: [],
+    // gateway metrics will be populated dynamically (e.g. gateway.temperature)
+    gateway: {},
+       sensor: {},
     predictions: {
       revenue: [],
       users: [],
@@ -71,200 +74,174 @@ export const useWebSocket = () => {
   const intervalRef = useRef(null);
 
   useEffect(() => {
-    // Since we don't have a real WebSocket server, we'll simulate it
-    const simulateWebSocket = () => {
+    // Connect to a real WebSocket server and map incoming messages
+    // into the existing `data` shape. Supports messages shaped as:
+    // { type: 'init'|'update', data: { topic, data, timestamp } }
+    // or { topic, data, timestamp }
+    wsRef.current = new WebSocket('ws://localhost:3000');
+
+    const socket = wsRef.current;
+
+    socket.onopen = () => {
+      console.log('✅ WebSocket connected');
       setIsConnected(true);
-      
-      // Generate initial data
-      const now = Date.now();
-      const initialData = {
-        revenue: Array.from({ length: 30 }, (_, i) => ({
-          timestamp: now - (29 - i) * 60000,
-          value: Math.floor(Math.random() * 10000) + 5000 + (i * 100), // Adding slight upward trend
-          label: `Revenue ${i}`,
-          predicted: false,
-          anomaly: false
-        })),
-        users: Array.from({ length: 30 }, (_, i) => ({
-          timestamp: now - (29 - i) * 60000,
-          value: Math.floor(Math.random() * 500) + 100 + (i * 5),
-          label: `Users ${i}`,
-          predicted: false,
-          anomaly: false
-        })),
-        orders: Array.from({ length: 30 }, (_, i) => ({
-          timestamp: now - (29 - i) * 60000,
-          value: Math.floor(Math.random() * 100) + 20 + (i * 2),
-          label: `Orders ${i}`,
-          predicted: false,
-          anomaly: false
-        })),
-        conversion: Array.from({ length: 30 }, (_, i) => ({
-          timestamp: now - (29 - i) * 60000,
-          value: Math.random() * 10 + 2 + (i * 0.1),
-          label: `Conversion ${i}`,
-          predicted: false,
-          anomaly: false
-        })),
-        temperature: Array.from({ length: 30 }, (_, i) => ({
-          timestamp: now - (29 - i) * 60000,
-          value: 20 + Math.random() * 15 + Math.sin(i * 0.2) * 5,
-          label: `Temperature ${i}`,
-          predicted: false,
-          anomaly: false
-        })),
-        vibration: Array.from({ length: 30 }, (_, i) => ({
-          timestamp: now - (29 - i) * 60000,
-          value: Math.random() * 8 + 1,
-          label: `Vibration ${i}`,
-          predicted: false,
-          anomaly: false
-        })),
-        acceleration: Array.from({ length: 30 }, (_, i) => ({
-          timestamp: now - (29 - i) * 60000,
-          value: Math.random() * 5 + 0.5,
-          label: `Acceleration ${i}`,
-          predicted: false,
-          anomaly: false
-        })),
-        predictions: {
-          revenue: [],
-          users: [],
-          orders: [],
-          conversion: []
-        },
-        anomalies: []
-      };
-      
-      setData(initialData);
-
-      // Generate initial predictions
-      const predictions = {
-        revenue: generatePrediction(initialData.revenue),
-        users: generatePrediction(initialData.users),
-        orders: generatePrediction(initialData.orders),
-        conversion: generatePrediction(initialData.conversion)
-      };
-
-      setData(prev => ({ ...prev, predictions }));
-
-      // Simulate real-time updates with AI features
-      intervalRef.current = setInterval(() => {
-        const types = ['revenue', 'users', 'orders', 'conversion', 'temperature', 'vibration', 'acceleration'];
-        const randomType = types[Math.floor(Math.random() * types.length)];
-        
-        let newValue;
-        const currentTime = Date.now();
-        
-        switch (randomType) {
-          case 'revenue':
-            newValue = Math.floor(Math.random() * 10000) + 5000;
-            // Occasionally inject anomalies
-            if (Math.random() < 0.1) newValue *= 2; // 10% chance of spike
-            break;
-          case 'users':
-            newValue = Math.floor(Math.random() * 500) + 100;
-            if (Math.random() < 0.05) newValue *= 0.3; // 5% chance of drop
-            break;
-          case 'orders':
-            newValue = Math.floor(Math.random() * 100) + 20;
-            break;
-          case 'conversion':
-            newValue = Math.random() * 10 + 2;
-            break;
-          case 'temperature':
-            newValue = 20 + Math.random() * 15 + Math.sin(currentTime * 0.001) * 5;
-            if (Math.random() < 0.08) newValue += 20; // Temperature spike
-            break;
-          case 'vibration':
-            newValue = Math.random() * 8 + 1;
-            if (Math.random() < 0.12) newValue *= 3; // Vibration anomaly
-            break;
-          case 'acceleration':
-            newValue = Math.random() * 5 + 0.5;
-            break;
-          default:
-            newValue = 0;
-        }
-
-        const newDataPoint = {
-          timestamp: currentTime,
-          value: newValue,
-          label: `${randomType} ${currentTime}`,
-          predicted: false,
-          anomaly: false
-        };
-
-        setData(prevData => {
-          const updatedData = {
-            ...prevData,
-            [randomType]: [...prevData[randomType].slice(1), newDataPoint]
-          };
-
-          // Update predictions for business metrics
-          if (['revenue', 'users', 'orders', 'conversion'].includes(randomType)) {
-            updatedData.predictions[randomType] = generatePrediction(updatedData[randomType]);
-          }
-
-          // Detect anomalies
-          const anomalies = detectAnomalies(updatedData[randomType]);
-          if (anomalies.length > 0) {
-            updatedData.anomalies = [...prevData.anomalies.slice(-10), ...anomalies.slice(-1)];
-          }
-
-          return updatedData;
-        });
-
-        // Update AI insights
-        setAiInsights(prev => {
-          const newInsights = { ...prev };
-          
-          // Generate trend analysis
-          newInsights.trends[randomType] = newValue > 0 ? 'increasing' : 'stable';
-          
-          // Generate alerts for anomalies
-          if (Math.random() < 0.05) { // 5% chance of alert
-            const alert = {
-              id: Date.now(),
-              type: 'anomaly',
-              metric: randomType,
-              message: `Unusual ${randomType} pattern detected`,
-              severity: 'medium',
-              timestamp: currentTime
-            };
-            newInsights.alerts = [...prev.alerts.slice(-5), alert];
-          }
-          
-          // Generate recommendations
-          if (Math.random() < 0.03) { // 3% chance of recommendation
-            const recommendations = [
-              'Consider scaling resources based on user growth trend',
-              'Revenue optimization opportunity detected',
-              'Temperature monitoring requires attention',
-              'Vibration levels suggest maintenance needed'
-            ];
-            const recommendation = {
-              id: Date.now(),
-              message: recommendations[Math.floor(Math.random() * recommendations.length)],
-              confidence: 0.7 + Math.random() * 0.3,
-              timestamp: currentTime
-            };
-            newInsights.recommendations = [...prev.recommendations.slice(-3), recommendation];
-          }
-          
-          return newInsights;
-        });
-      }, 3000); // Update every 3 seconds
     };
 
-    simulateWebSocket();
+    socket.onclose = () => {
+      console.log('❌ WebSocket disconnected');
+      setIsConnected(false);
+    };
+
+    socket.onerror = (err) => {
+      console.error('WebSocket error', err);
+    };
+
+    socket.onmessage = (event) => {
+      try {
+        const msg = JSON.parse(event.data);
+
+        let topic, payload, timestamp;
+
+        if (msg.type === 'init' && msg.data) {
+          topic = msg.data.topic;
+          payload = msg.data.data;
+          timestamp = msg.data.timestamp;
+        } else if (msg.topic && msg.data !== undefined) {
+          topic = msg.topic;
+          payload = msg.data;
+          timestamp = msg.timestamp;
+        } else if (msg.type === 'update' && msg.data) {
+          // many updates come as { type: 'update', data: { ... } }
+          // handle common shapes below; individual topics will be processed later
+          payload = msg.data;
+          timestamp = msg.data.timestamp || msg.data.gateway?.lastUpdated || Date.now();
+        }
+
+        
+        // If payload contains a gateway object with gw_info, map its fields
+        if (payload && payload.gateway && payload.gateway.gw_info) {
+          const gw = payload.gateway.gw_info;
+          const gwTs = payload.gateway.lastUpdated ? Date.parse(payload.gateway.lastUpdated) : Date.now();
+          const sns = payload.array;
+
+          setData(prev => {
+            const next = { ...prev };
+
+            // store the raw gw object for convenience
+            next.gateway = { ...next.gateway, ...gw, lastUpdated: payload.gateway.lastUpdated || gwTs };
+            next.sensor = { ...next.sensor, list: [...sns] };
+
+            // Flatten numeric gw_info fields into small time-series so UI MetricCard + charts can use them
+            const numericFields = ['temperature', 'drv_tot', 'drv_usd', 'overall', 'free', 'active'];
+
+            numericFields.forEach((field) => {
+              const key = `gateway.${field}`;
+              const val = gw[field];
+              if (val === undefined || val === null) return;
+
+              const existing = Array.isArray(prev[key]) ? prev[key] : [];
+              const newPoint = {
+                timestamp: gwTs,
+                value: typeof val === 'number' ? val : Number(val) || 0,
+                label: `${key} ${gwTs}`,
+                predicted: false,
+                anomaly: false
+              };
+
+              // keep same length as before when possible
+              next[key] = [...existing.slice(1), newPoint];
+            });
+
+            return next;
+          });
+
+          // small AI insights update for gateway
+          setAiInsights(prev => ({
+            ...prev,
+            trends: { ...prev.trends, gateway: (payload.gateway.gw_info.temperature ?? 0) > 0 ? 'stable' : 'unknown' }
+          }));
+
+          // we've handled the gateway update
+          return;
+        }
+
+        if (payload === undefined) return;
+
+        // Update the stored data for the topic. The payload may be:
+        // - an array of datapoints (replace),
+        // - a single datapoint object (append/shift),
+        // - a primitive value (wrap into datapoint and append).
+
+  
+        setData(prev => {
+          const next = { ...prev };
+
+          if (Array.isArray(payload)) {
+            next[topic] = payload.map(d => ({
+              timestamp: d.timestamp || Date.now(),
+              value: d.value ?? d.v ?? 0,
+              label: d.label || `${topic} ${d.timestamp || Date.now()}`,
+              predicted: !!d.predicted,
+              anomaly: !!d.anomaly
+            }));
+          } else if (payload && typeof payload === 'object') {
+            const newPoint = {
+              timestamp: payload.timestamp || timestamp || Date.now(),
+              value: payload.value ?? payload.v ?? 0,
+              label: payload.label || `${topic} ${payload.timestamp || Date.now()}`,
+              predicted: !!payload.predicted,
+              anomaly: !!payload.anomaly
+            };
+
+            const existing = Array.isArray(prev[topic]) ? prev[topic] : [];
+            // Keep same length as existing, drop oldest
+            next[topic] = [...existing.slice(1), newPoint];
+          } else {
+            // primitive
+            const newPoint = {
+              timestamp: timestamp || Date.now(),
+              value: payload,
+              label: `${topic} ${timestamp || Date.now()}`,
+              predicted: false,
+              anomaly: false
+            };
+            const existing = Array.isArray(prev[topic]) ? prev[topic] : [];
+            next[topic] = [...existing.slice(1), newPoint];
+          }
+
+          // Update predictions for business metrics
+          if (['revenue', 'users', 'orders', 'conversion'].includes(topic)) {
+            next.predictions = {
+              ...prev.predictions,
+              [topic]: generatePrediction(next[topic])
+            };
+          }
+
+          // Detect anomalies for this metric and keep a short list
+          const anomalies = detectAnomalies(next[topic] || []);
+          if (anomalies.length > 0) {
+            next.anomalies = [...prev.anomalies.slice(-10), ...anomalies.slice(-1)];
+          }
+
+          return next;
+        });
+
+        // Minimal AI insights update (keep it lightweight — complex logic can be added later)
+        setAiInsights(prev => {
+          const next = { ...prev };
+          const lastVal = (payload && (payload.value ?? (Array.isArray(payload) ? payload.slice(-1)[0]?.value : undefined))) ?? null;
+          next.trends = { ...prev.trends, [topic]: lastVal > 0 ? 'increasing' : 'stable' };
+          return next;
+        });
+      } catch (err) {
+        console.error('⚠️ Error parsing WebSocket message:', err);
+      }
+    };
 
     return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
       if (wsRef.current) {
         wsRef.current.close();
+        wsRef.current = null;
       }
     };
   }, []);

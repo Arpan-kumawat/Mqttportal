@@ -11,21 +11,25 @@ L.Icon.Default.mergeOptions({
   shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
 });
 
-const MyMap = () => {
+const MyMap = ({ data }) => {
   const locations = [
     // { id: 1, name: "New Delhi", lat: 28.6139, lng: 77.2090 },
-    { id: 2, name: "Bagru", lat: 26.808235,lng: 75.539598, },
-    { id: 3, name: "Jaipur", lat: 26.918411,lng: 75.774652, },
+    {
+      id: 1, name: data?.gateway?.name || "", lat: data?.gateway?.latitude || 10
+      , lng: data?.gateway?.longitude || 10
+    },
+
 
 
 
   ];
 
-  const center = [26.918411, 75.774652]; // Central India (so all markers are visible)
+  const center = [data?.gateway?.latitude || 10,
+  data?.gateway?.longitude || 10]; // Central location(so all markers are visible)
 
   return (
-     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow"> 
-          <div className="flex items-center justify-between mb-4">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
+      <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-gray-900">Sensor Location</h3>
         {/* <div className="flex items-center gap-2">
           {predictions.length > 0 && (
@@ -42,25 +46,25 @@ const MyMap = () => {
           )}
         </div> */}
       </div>
-    <div style={{ height: "35vh", width: "100%" }}>
-      <MapContainer center={center} zoom={8} style={{ height: "100%", width: "100%" }} zoomControl={false} >
-        <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution="&copy; OpenStreetMap contributors"
-        />
+      <div style={{ height: "35vh", width: "100%" }}>
+        <MapContainer center={center} zoom={8} style={{ height: "100%", width: "100%" }} zoomControl={false} >
+          <TileLayer
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            attribution="&copy; OpenStreetMap contributors"
+          />
 
-        {locations.map((loc) => (
-          <Marker key={loc.id} position={[loc.lat, loc.lng]}>
-            <Popup>
-              <b>{loc.name}</b>
-              <br />
-              Lat: {loc.lat}, Lng: {loc.lng}
-            </Popup>
-          </Marker>
-        ))}
-      </MapContainer>
+          {locations.map((loc) => (
+            <Marker key={loc.id} position={[loc.lat, loc.lng]}>
+              <Popup>
+                <b>{loc.name}</b>
+                <br />
+                Lat: {loc.lat}, Lng: {loc.lng}
+              </Popup>
+            </Marker>
+          ))}
+        </MapContainer>
+      </div>
     </div>
-     </div>
   );
 };
 
