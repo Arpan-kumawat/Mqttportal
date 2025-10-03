@@ -1,12 +1,13 @@
 const express = require('express');
 const router = express.Router();
 
-// Mount service routers explicitly
-const deviceRoute = require("../services/device/DeviceRoute");
-// const authRoute = require("../services/auth/AuthRoute");
-// const storeRoute = require("../services/store/StoreRoute");
+const routes = [
+    require("../services/device/DeviceRoute"),
 
-// Mount device routes at /device
-router.use('/device', deviceRoute);
+    // require("../services/employee/EmpRoute"),
+  
+]
+
+router.use("/", routes);
 
 module.exports = router;

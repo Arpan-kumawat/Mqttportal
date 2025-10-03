@@ -1,9 +1,9 @@
 var express = require('express');
 var router = express.Router();
-// const TransactionController = require("../services/transaction/TransactionController");
+const DeviceController = require("../services/device/DeviceController");
 
-// const Transaction = new TransactionController();
-// router.get('/:order_id', Transaction.downloadInvoice);
-// router.post('/test-kafka', Transaction.kafkaTest);
+const Device = new DeviceController();
+// router.get('/:order_id', Device.downloadInvoice);
+// router.post('/socket', Device.SocketData);
 
 module.exports = router;

@@ -6,7 +6,14 @@ dotenv.config({ path: __dirname + '/.env' });
 const createError = require('http-errors');
 
 const express = require('express');
+
+const mongoose = require('mongoose');
+const mongodbObj = require('./config/documentDB');
 const path = require('path');
+mongodbObj.databaseConnection(mongoose);
+
+
+
 
 const apiRouter = require('./routes/api');
 const indexRouter = require('./routes/index');
@@ -23,7 +30,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 
-// app.use('/', apiRouter);
+app.use('/', apiRouter);
 
 app.use('/api', indexRouter);
 

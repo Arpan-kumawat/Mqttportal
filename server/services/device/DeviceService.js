@@ -202,7 +202,7 @@ mqttClient.on('message', (topic, message) => {
             }
         });
 
-        console.log(`✅ Updated sensor ${sensorId}:`, mqttData[sensorId]);
+        // console.log(`✅ Updated sensor ${sensorId}:`, mqttData[sensorId]);
 
     } catch (error) {
         console.error('Error processing MQTT message:', error.message);
@@ -214,10 +214,31 @@ class DeviceService {
         this._DeviceDataService = new DeviceDataService();
     }
 
-    async getData(body) {
+    async GetData() {
         // return the current snapshot; controllers should handle HTTP responses
         return formatMqttData(mqttData);
     }
 }
 
+// Helper functions to integrate with an external WebSocket server
+function addClient(ws) {
+    if (!clients.includes(ws)) {
+        clients.push(ws);
+    }
+}
+
+function removeClient(ws) {
+    const idx = clients.indexOf(ws);
+    if (idx > -1) clients.splice(idx, 1);
+}
+
+function getFormattedData() {
+    return formatMqttData(mqttData);
+}
+
+// Export the DeviceService class (for controllers) and attach helpers so other modules
+// can require the class and call helpers like require(...).addClient(ws)
 module.exports = DeviceService;
+module.exports.addClient = addClient;
+module.exports.removeClient = removeClient;
+module.exports.getFormattedData = getFormattedData;

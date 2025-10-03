@@ -21,6 +21,32 @@ app.set('port', port);
  * Create HTTP server.
  */
 var server = http.createServer(app);
+var WebSocket = require('ws');
+// DeviceService helpers to manage WS clients and get current data
+var DeviceService = require('../services/device/DeviceService');
+var addClient = DeviceService.addClient;
+var removeClient = DeviceService.removeClient;
+var getFormattedData = DeviceService.getFormattedData;
+
+// Attach WebSocket server to the same HTTP server
+var wss = new WebSocket.Server({ server });
+
+wss.on('connection', function connection(ws) {
+  console.log('WebSocket client connected');
+  addClient(ws);
+
+  // Send initial snapshot
+  try {
+    ws.send(JSON.stringify({ type: 'init', data: getFormattedData() }));
+  } catch (e) {
+    console.error('Failed to send initial data to WS client:', e.message);
+  }
+
+  ws.on('close', function close() {
+    console.log('WebSocket client disconnected');
+    removeClient(ws);
+  });
+});
 
 
 /**

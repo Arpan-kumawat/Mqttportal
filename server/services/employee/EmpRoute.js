@@ -1,12 +1,11 @@
-const express = require('express');
-const EmpController = require("./EmpController");
-
+const express = require("express");
+const EmpConroller = require("./EmpController");
 const router = express.Router();
-const Emp = new EmpController();
-router.post("/manage-cashier-collection", Emp.manageCashierCollection);
-router.post("/save-printer-configuration", Emp.savePrinterConfiguration);
-router.post("/save-gateway-credential", Emp.saveGatewayCredential);
-router.post("/save-float-amount", Emp.saveFloatAmount);
+
+const Emp = new EmpConroller();
+
+router.post("/list",  Emp.empList);
+router.post("/save", Emp.saveEmp);
 
 router.use("/employee", router);
 module.exports = router;
