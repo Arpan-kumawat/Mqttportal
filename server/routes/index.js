@@ -4,10 +4,11 @@ const router = express.Router();
 const routes = [
     require("../services/device/DeviceRoute"),
 
-    // require("../services/employee/EmpRoute"),
+    require("../services/employee/EmpRoute"),
   
 ]
 
 router.use("/", routes);
 
 module.exports = router;
+

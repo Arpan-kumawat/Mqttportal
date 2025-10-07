@@ -5,6 +5,7 @@ import PrivateRoute from "./PrivateRoute.jsx";
 import { useAuth } from "../contexts/AuthContext";
 import Setting from "../screens/Setting";
 import MainLayout from "../layout/MainLayout.jsx";
+import User from "../screens/User.jsx";
 
 const AppRoutes = () => {
   const { user } = useAuth();
@@ -29,6 +30,7 @@ const AppRoutes = () => {
           <Route element={<MainLayout />}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/setting" element={<Setting />} />
+             <Route path="/user" element={<User />} />
             {/* add more protected routes here */}
           </Route>
         </Route>

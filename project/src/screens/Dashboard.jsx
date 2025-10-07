@@ -8,9 +8,11 @@ import AIInsightsPanel from '../components/AIInsightsPanel';
 import { useWebSocket } from '../hooks/useWebSocket';
 import CpuMonitor from '../components/CpuMonitor';
 import PieCharts from "../components/PieChart"
+import Select from '@mui/joy/Select';
+import Option from '@mui/joy/Option';
 
-import Map from '../components/Map';
 import MyMap from '../components/Map';
+import Sensor from '../Views/Dashboard/Sensor';
 
 const Dashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -19,11 +21,14 @@ const Dashboard = () => {
 
   const tabs = [
     { id: 'overview', label: 'Overview' },
-       { id: 'sensors', label: 'Sensor Data' },
-     { id: 'Health', label: 'Health Metrics' },
- 
+    { id: 'sensors', label: 'Sensor Data' },
+    { id: 'Health', label: 'Health Metrics' },
+
     // { id: 'ai-predictions', label: 'AI Predictions' }
   ];
+
+  const handleChange = {
+  };
 
   const getCurrentValue = (type) => {
     const latestData = data[type] || [];
@@ -92,7 +97,7 @@ const Dashboard = () => {
                 </div> */}
           </div>
           <div className="text-sm text-gray-500">
-             Gateway Up time: {data?.gateway?.uptime}
+            Gateway Up time: {data?.gateway?.uptime}
           </div>
         </div>
       </div>
@@ -278,41 +283,7 @@ const Dashboard = () => {
       )}
 
       {activeTab === 'sensors' && (
-        <>
-
-           <select >
-           <option value={"all"}>All Sensors</option>
-            {data?.sensor?.list?.map((item)=>
-               <option value={item?.sensorId}>Sensor {item?.sensorId}</option>
-            )}
- 
-   
-    </select>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-         
-          <RealtimeChart
-            data={data.temperature}
-            title="Temperature Sensor Data"
-            color="#ef4444"
-            format="temperature"
-            anomalies={getAnomalies('temperature')}
-          />
-          <RealtimeChart
-            data={data.vibration}
-            title="Vibration Sensor Data"
-            color="#f59e0b"
-            format="vibration"
-            anomalies={getAnomalies('vibration')}
-          />
-          <RealtimeChart
-            data={data.acceleration}
-            title="Acceleration Sensor Data"
-            color="#6366f1"
-            format="acceleration"
-            anomalies={getAnomalies('acceleration')}
-          />
-        </div>
-        </>
+  <Sensor data={data} />
       )}
 
       {activeTab === 'ai-predictions' && (

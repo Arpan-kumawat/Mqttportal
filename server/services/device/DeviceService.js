@@ -140,12 +140,14 @@ function formatMqttData(mqttDataLocal) {
     const array = [];
     let unknown = null;
     let gateway = null;
+    let system_active = false;
 
     Object.values(mqttDataLocal).forEach(sensor => {
         if (sensor.sensorId === "unknown") {
             unknown = sensor;
         } else if (sensor.sensorId === "gateway") {
             gateway = sensor;
+            system_active=true
         } else {
             array.push(sensor);
         }
@@ -154,7 +156,7 @@ function formatMqttData(mqttDataLocal) {
     // sort by sensorId
     array.sort((a, b) => a.sensorId - b.sensorId);
 
-    return { array, unknown, gateway };
+    return { array, unknown, gateway,system_active };
 }
 
 mqttClient.on('message', (topic, message) => {

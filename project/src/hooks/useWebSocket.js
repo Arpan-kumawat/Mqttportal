@@ -65,6 +65,7 @@ export const useWebSocket = () => {
     anomalies: []
   });
   const [isConnected, setIsConnected] = useState(false);
+  const [isSystemActive, setIsSystemActive] = useState(false);
   const [aiInsights, setAiInsights] = useState({
     trends: {},
     alerts: [],
@@ -101,6 +102,7 @@ export const useWebSocket = () => {
         const msg = JSON.parse(event.data);
 
         let topic, payload, timestamp;
+
 
         if (msg.type === 'init' && msg.data) {
           topic = msg.data.topic;
@@ -155,6 +157,7 @@ export const useWebSocket = () => {
             return next;
           });
 
+          setIsSystemActive(msg.data?.system_active);
           // small AI insights update for gateway
           setAiInsights(prev => ({
             ...prev,
@@ -246,5 +249,5 @@ export const useWebSocket = () => {
     };
   }, []);
 
-  return { data, isConnected, aiInsights };
+  return { data, isConnected, aiInsights,isSystemActive };
 };

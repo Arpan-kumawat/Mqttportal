@@ -4,18 +4,21 @@ import {
   Brain, AlertTriangle, Thermometer, Activity, Zap ,Laptop,History,BellRing
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useWebSocket } from '../hooks/useWebSocket';
 
 
 // ...existing imports...
 
 const Sidebar = ({ isOpen, onClose,setMenuPage }) => {
   const [activeTab, setActiveTab] = useState('Dashboard');
+  const { isSystemActive } = useWebSocket();
+
   const menuItems = [
     { icon: Home, label: 'Dashboard', route:'dashboard'},
     { icon: BarChart3, label: 'Analytics' },
     // { icon: Brain, label: 'AI Predictions' },
     { icon: History, label: 'History' },
-    { icon: Users, label: 'Users' },
+    { icon: Users, label: 'Users',route:'user' },
     // { icon: ShoppingCart, label: 'Orders' },
     { icon: Thermometer, label: 'Sensors Info' },
     { icon: Laptop, label: 'Gateway Setup' },
@@ -85,8 +88,8 @@ const Sidebar = ({ isOpen, onClose,setMenuPage }) => {
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-slate-700">
           <div className="bg-gradient-to-r from-slate-800 to-slate-700 rounded-lg p-3 border border-slate-600">
             <div className="flex items-center gap-2 mb-2">
-              <div className="h-2 w-2 bg-green-400 rounded-full animate-pulse"></div>
-              <span className="text-sm font-medium">System Active</span>
+              <div className={`h-2 w-2  ${isSystemActive ?  'bg-green-400 ' : 'bg-red-400'}  rounded-full`}></div>
+              <span className="text-sm font-medium"> {isSystemActive?"System Active" : "System Inactive" } </span>
             </div>
             <div className="flex items-center gap-2 mb-1">
               <Zap className="h-3 w-3 text-purple-400" />
