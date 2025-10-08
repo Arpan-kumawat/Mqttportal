@@ -37,7 +37,10 @@ export default function Sensor({ data }) {
     <>
       <div className="mb-6">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4 text-sm"></div>
+          <div className="flex items-center gap-4 text-sm">
+         
+              <h3 className="text-lg font-semibold text-gray-900">  {data.sensor?.list[0]?.gvib?.sensorType}</h3>
+          </div>
           <div className="text-sm text-gray-500 flex items-center gap-4">
             <Select
               defaultValue="all"
@@ -79,28 +82,26 @@ export default function Sensor({ data }) {
             />
           </div>
           <div className="mb-4">
-        
-
-    <RealtimeGraph
-             data={data.sensor}
-            selectedSensor={selectedSensor}
-            title="Acceleration RMS (g)"
-            color="#6366f1"
-                type="acceleration"
-            format="acceleration"
-            anomalies={getAnomalies("acceleration")}
-          />
-
+            <RealtimeGraph
+              data={data.sensor}
+              selectedSensor={selectedSensor}
+              selectedAxis={selectedAxis}
+              title="Acceleration RMS (g)"
+              color="#6366f1"
+              type="acceleration"
+              format="acceleration"
+              anomalies={getAnomalies("acceleration")}
+            />
           </div>
           <RealtimeGraph
-              data={data.vibration}
+              data={data.sensor}
               selectedSensor={selectedSensor}
               title="Temperature (°C)"
               color="#f59e0b"
                type="temperature"
               format="temperature"
               anomalies={getAnomalies("temperature")}
-            />{" "}
+            />
         </div>
 
         {/* Card takes 1/4 width on large screens */}

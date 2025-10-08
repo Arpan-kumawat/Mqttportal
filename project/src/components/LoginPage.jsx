@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { LogIn, Eye, EyeOff, Brain } from 'lucide-react';
 import { Lock, User, AlertCircle, } from 'lucide-react';
 import { Activity } from 'lucide-react';
+import { auth_user } from '../utils/Helper';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -22,7 +23,7 @@ const LoginPage = () => {
       return;
     }
 
-    const success = await login(email, password);
+    const success = await auth_user({email, password});
 
     if (success) {
       navigate('/dashboard');

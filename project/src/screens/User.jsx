@@ -1,205 +1,232 @@
-import { useState } from 'react';
+import { useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardActions,
+  Typography,
+  Input,
+  Select,
+  Option,
+  Button,
+  Stack,
+  Checkbox,
+  FormControl,
+  FormLabel,
+  Alert,
+} from "@mui/joy";
 
-
-function User() {
+export default function User() {
   const [formData, setFormData] = useState({
-    email: '',
-    fullName: '',
-    role: 'user',
-    status: 'active'
+    email: "",
+    fullName: "",
+    role: "user",
+    status: [],
   });
+  const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
-    const [activeTab, setActiveTab] = useState('user');
-  const [message, setMessage] = useState({ type: '', text: '' });
+  const [message, setMessage] = useState({ type: "", text: "" });
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
+  const handleChange = ({ name, value }) => {
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
+    setErrors((prev) => ({ ...prev, [name]: "" }));
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+    if (!formData.email) {
+      newErrors.email = "Email is required";
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = "Enter a valid email address";
+    }
+
+    if (!formData.fullName.trim()) {
+      newErrors.fullName = "Full name is required";
+    }
+
+    if (formData.status.length === 0) {
+      newErrors.status = "Select at least one access option";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!validateForm()) return;
+
     setLoading(true);
-    setMessage({ type: '', text: '' });
+    setMessage({ type: "", text: "" });
 
     try {
-  
-
-      setMessage({ type: 'success', text: 'User created successfully!' });
+      await new Promise((r) => setTimeout(r, 1000));
+      setMessage({ type: "success", text: "User created successfully!" });
       setFormData({
-        email: '',
-        fullName: '',
-        role: 'user',
-        status: 'active'
+        email: "",
+        fullName: "",
+        role: "user",
+        status: [],
       });
     } catch (error) {
-      setMessage({ type: 'error', text: error.message || 'Failed to create user' });
+      setMessage({
+        type: "danger",
+        text: error.message || "Failed to create user",
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleReset = () => {
-    setFormData({
-      email: '',
-      fullName: '',
-      role: 'user',
-      status: 'active'
-    });
-    setMessage({ type: '', text: '' });
-  };
 
-
-    const tabs = [
-    { id: 'user', label: 'User List' },
-       { id: 'create', label: 'Create New User' },
+  const accessOptions = [
+    "All access",
+    "History",
+    "User",
+    "Gateway",
+    "Alarm",
+    "Setting",
   ];
 
   return (
-<>
-
-  <div className="mb-6 border-b">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4 text-sm">
-
-
-            <div className="border-b border-gray-200">
-              <nav className="-mb-px flex space-x-8 overflow-x-auto">
-                {tabs.map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`
-                      whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors
-                      ${activeTab === tab.id
-                        ? 'border-blue-500 text-blue-600'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                      }
-                    `}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-              </nav>
-            </div>
-
-     
-            {/* <div className="flex items-center gap-2">
-                  <Zap className="h-4 w-4 text-purple-500" />
-                  <span className="text-purple-600 font-medium">AI Analysis Active</span>
-                </div> */}
-          </div>
-     
-        </div>
-      </div>
-
-
-      {activeTab === 'user' && (
-        <>
-          {/* Business Metrics Cards */}
-          <div className=" mb-8"> 
-
-
-    <div className="create-user-container">
-      <div className="create-user-card">
-        <div className="card-header">
-          <h2>Create New User</h2>
-          <p>Add a new user to the system</p>
-        </div>
+    <Card
+      variant="outlined"
+      sx={{
+    
+        mx: "auto",
+      
+        p: 2,
+        borderRadius: "lg",
+        boxShadow: "sm",
+        bgcolor: "background.body",
+      }}
+    >
+      <CardContent>
+        <Typography level="h4" fontWeight="lg" mb={1}>
+          Create New User
+        </Typography>
+        <Typography level="body2" mb={2} textColor="text.tertiary">
+          Add a new user to the system with appropriate permissions.
+        </Typography>
 
         {message.text && (
-          <div className={`message ${message.type}`}>
+          <Alert
+            color={message.type === "success" ? "success" : "danger"}
+            variant="soft"
+            sx={{ mb: 2 }}
+          >
             {message.text}
-          </div>
+          </Alert>
         )}
 
-        <form onSubmit={handleSubmit} className="user-form">
-          <div className="form-group">
-            <label htmlFor="email">Email Address</label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="user@example.com"
-              required
-            />
-          </div>
+        <form onSubmit={handleSubmit}>
+          <Stack spacing={2}>
+            <FormControl required error={!!errors.email}>
+              <FormLabel>Email Address</FormLabel>
+              <Input
+                fullWidth
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={(e) =>
+                  handleChange({ name: "email", value: e.target.value })
+                }
+                placeholder="user@example.com"
+              />
+              {errors.email && (
+                <Typography level="body3" color="danger">
+                  {errors.email}
+                </Typography>
+              )}
+            </FormControl>
 
-          <div className="form-group">
-            <label htmlFor="fullName">Full Name</label>
-            <input
-              type="text"
-              id="fullName"
-              name="fullName"
-              value={formData.fullName}
-              onChange={handleChange}
-              placeholder="John Doe"
-              required
-            />
-          </div>
+            <FormControl required error={!!errors.fullName}>
+              <FormLabel>Full Name</FormLabel>
+              <Input
+                fullWidth
+                type="text"
+                name="fullName"
+                value={formData.fullName}
+                onChange={(e) =>
+                  handleChange({ name: "fullName", value: e.target.value })
+                }
+                placeholder="John Doe"
+              />
+              {errors.fullName && (
+                <Typography level="body3" color="danger">
+                  {errors.fullName}
+                </Typography>
+              )}
+            </FormControl>
 
-          <div className="form-group">
-            <label htmlFor="role">Role</label>
-            <select
-              id="role"
-              name="role"
-              value={formData.role}
-              onChange={handleChange}
-              required
-            >
-              <option value="user">User</option>
-              <option value="admin">Admin</option>
-              <option value="manager">Manager</option>
-              <option value="viewer">Viewer</option>
-            </select>
-          </div>
+            <FormControl required>
+              <FormLabel>Role</FormLabel>
+              <Select
+                fullWidth
+                name="role"
+                value={formData.role}
+                onChange={(event, newValue) =>
+                  handleChange({ name: "role", value: newValue })
+                }
+              >
+                <Option value="user">User</Option>
+                <Option value="admin">Admin</Option>
+                <Option value="manager">Manager</Option>
+                <Option value="viewer">Viewer</Option>
+              </Select>
+            </FormControl>
 
-          <div className="form-group">
-            <label htmlFor="status">Status</label>
-            <select
-              id="status"
-              name="status"
-              value={formData.status}
-              onChange={handleChange}
-              required
-            >
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-              <option value="pending">Pending</option>
-            </select>
-          </div>
+            <FormControl error={!!errors.status}>
+              <FormLabel>Access</FormLabel>
+              <Stack direction="row" spacing={1} flexWrap="wrap" marginTop={2}>
+                {accessOptions.map((status) => (
+                  <Checkbox
+                    key={status}
+                    label={status}
+                    checked={formData.status.includes(status)}
+                    onChange={(e) => {
+                      const newStatus = e.target.checked
+                        ? [...formData.status, status]
+                        : formData.status.filter((s) => s !== status);
+                      handleChange({ name: "status", value: newStatus });
+                    }}
+                    variant="soft"
+                    color="primary"
+                  />
+                ))}
+              </Stack>
+              {errors.status && (
+                <Typography level="body3" color="danger">
+                  {errors.status}
+                </Typography>
+              )}
+            </FormControl>
+          </Stack>
 
-          <div className="form-actions">
-            <button
-              type="button"
-              onClick={handleReset}
-              className="btn btn-secondary"
-              disabled={loading}
-            >
-              Reset
-            </button>
-            <button
+          <CardActions
+            sx={{
+              mt: 3,
+              display: "flex",
+              flexDirection: { xs: "column", sm: "row" },
+              justifyContent: "flex-end",
+              gap: 1,
+            }}
+          >
+        
+            <Button
+              fullWidth
               type="submit"
-              className="btn btn-primary"
+              variant="solid"
+              color="primary"
               disabled={loading}
             >
-              {loading ? 'Creating...' : 'Create User'}
-            </button>
-          </div>
+              {loading ? "Creating..." : "Create User"}
+            </Button>
+          </CardActions>
         </form>
-      </div>
-    </div>
-
- </div>
- </>
-      )}
-    </>
+      </CardContent>
+    </Card>
   );
 }
-
-export default User;

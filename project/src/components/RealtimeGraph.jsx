@@ -13,7 +13,8 @@ import {
 
 const RealtimeGraph = ({
   title,
-  color,type,
+  color,
+  type,
   format = "number",
   predictions = [],
   anomalies = [],
@@ -32,9 +33,9 @@ const RealtimeGraph = ({
       case "temperature":
         return `${value.toFixed(1)}°C`;
       case "vibration":
-        return `${value.toFixed(2)} mm/s`;
+        return `${value.toFixed(3)} mm/s`;
       case "acceleration":
-        return `${value.toFixed(2)} g`;
+        return `${value.toFixed(3)} g`;
       default:
         return value.toLocaleString();
     }
@@ -81,12 +82,25 @@ const RealtimeGraph = ({
         if (!map.has(ts)) map.set(ts, { timestamp: ts });
         const point = map.get(ts);
         const id = item.sensorId || item.gvib?.sensorId;
-        const v =  type==="velocity" ?item.gvib?.vibrationVelocity : item.gvib?.accelerationRMS;
 
-        if (id && v) {
-          point[`${id}x`] = typeof v.x === "number" ? v.x : Number(v.x || 0);
-          point[`${id}y`] = typeof v.y === "number" ? v.y : Number(v.y || 0);
-          point[`${id}z`] = typeof v.z === "number" ? v.z : Number(v.z || 0);
+        // If this component is the temperature chart, only capture temperature
+        if (type === "temperature") {
+          const tempRaw = item.sns_info?.temperature ?? item.sns_info?.temprature ?? item.snsInfo?.temperature ?? item.snsInfo?.temprature;
+          if (id !== undefined && tempRaw !== undefined && tempRaw !== null) {
+            const tempVal = typeof tempRaw === "number" ? tempRaw : Number(tempRaw);
+            if (!Number.isNaN(tempVal)) point[`${id}_temp`] = tempVal;
+          }
+        } else {
+          // For velocity/vibration or acceleration charts, only populate x/y/z series
+          let v = null;
+          if (type === "acceleration") v = item.gvib?.accelerationRMS;
+          else v = item.gvib?.vibrationVelocity; // default for velocity/vibration
+
+          if (id && v) {
+            point[`${id}x`] = typeof v.x === "number" ? v.x : Number(v.x || 0);
+            point[`${id}y`] = typeof v.y === "number" ? v.y : Number(v.y || 0);
+            point[`${id}z`] = typeof v.z === "number" ? v.z : Number(v.z || 0);
+          }
         }
       });
 
@@ -144,13 +158,20 @@ const RealtimeGraph = ({
       const sel = String(selectedSensor);
       keys = keys.filter((k) => k.startsWith(sel));
     }
-    if (selectedAxis && String(selectedAxis).toLowerCase() !== "all") {
+    // If this graph is for temperature, only include temp series like '245_temp'
+    if (type === "temperature") {
+      keys = keys.filter((k) => k.toLowerCase().endsWith("_temp"));
+    } else if (selectedAxis && String(selectedAxis).toLowerCase() !== "all") {
       const ax = String(selectedAxis).toLowerCase();
-      // filter keys that end with the axis letter (x/y/z)
-      keys = keys.filter((k) => k.toLowerCase().endsWith(ax));
+      // filter keys that end with the axis letter (x/y/z). Do not exclude non-axis series
+      keys = keys.filter((k) => {
+        const last = k.slice(-1).toLowerCase();
+        if (["x", "y", "z"].includes(last)) return last === ax;
+        return true;
+      });
     }
     return keys;
-  }, [seriesKeys, selectedSensor]);
+  }, [seriesKeys, selectedSensor, selectedAxis]);
 
   // simple color palette to cycle through
   const palette = [
@@ -302,6 +323,7 @@ const propsAreEqual = (prev, next) => {
   if (prev.format !== next.format) return false;
   if (prev.selectedSensor !== next.selectedSensor) return false;
   if (prev.selectedAxis !== next.selectedAxis) return false;
+  if (prev.type !== next.type) return false;
 
   if ((prev.predictions?.length || 0) !== (next.predictions?.length || 0))
     return false;

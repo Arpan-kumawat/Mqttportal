@@ -20,7 +20,7 @@ const Sidebar = ({ isOpen, onClose,setMenuPage }) => {
     { icon: History, label: 'History' },
     { icon: Users, label: 'Users',route:'user' },
     // { icon: ShoppingCart, label: 'Orders' },
-    { icon: Thermometer, label: 'Sensors Info' },
+    { icon: Thermometer, label: 'Sensors Info',route:'sensor-info' },
     { icon: Laptop, label: 'Gateway Setup' },
     { icon: BellRing, label: 'Alaram' },
     { icon: Settings, label: 'Settings',route:'setting' }
