@@ -1,8 +1,8 @@
 import React from "react";
-import RealtimeChart from "../../components/RealtimeChart";
 import Select from "@mui/joy/Select";
 import Option from "@mui/joy/Option";
 import { Card, CardContent, Typography } from "@mui/joy";
+import RealtimeGraph from "../../components/RealtimeGraph";
 
 export default function Sensor({ data }) {
   const getAnomalies = (type) => {
@@ -11,6 +11,8 @@ export default function Sensor({ data }) {
       series.some((point) => point.timestamp === anomaly.timestamp)
     );
   };
+
+
 
   const dataCard = [
     { velocity: "0.71 mm/s", colors: ["green", "green", "green", "green"] },
@@ -55,21 +57,29 @@ export default function Sensor({ data }) {
         {/* Chart takes 3/4 width on large screens */}
         <div className="w-full lg:w-3/4 pr-2">
           <div className="mb-4">
-            <RealtimeChart
-              data={data.sensor?.list[0]?.sns_info}
+            <RealtimeGraph
+              data={data.sensor}
               title="Velocity RMS (mm/s)"
               color="#ef4444"
               format="temperature"
               anomalies={getAnomalies("temperature")}
             />
           </div>
-          <RealtimeChart
+                <div className="mb-4">   
+          <RealtimeGraph
             data={data.vibration}
             title="Temprature (Celsius)"
             color="#f59e0b"
             format="vibration"
             anomalies={getAnomalies("vibration")}
-          />
+          /> </div>
+              <RealtimeGraph
+          data={data.acceleration}
+          title="Acceleration RMS (g)"
+          color="#6366f1"
+          format="acceleration"
+          anomalies={getAnomalies("acceleration")}
+        />
         </div>
 
         {/* Card takes 1/4 width on large screens */}
@@ -149,13 +159,7 @@ export default function Sensor({ data }) {
       </div>
 
       <div className="">
-        <RealtimeChart
-          data={data.acceleration}
-          title="Acceleration RMS (g)"
-          color="#6366f1"
-          format="acceleration"
-          anomalies={getAnomalies("acceleration")}
-        />
+    
       </div>
     </>
   );
