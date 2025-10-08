@@ -8,6 +8,10 @@
     display: none !important;
 }
 
+.recharts-tooltip-wrapper{
+  z-index: 99999;
+}
+
 .create-user-container {
   min-height: 100vh;
   display: flex;

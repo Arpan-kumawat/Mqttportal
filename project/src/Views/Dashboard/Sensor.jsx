@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import Select from "@mui/joy/Select";
 import Option from "@mui/joy/Option";
 import { Card, CardContent, Typography } from "@mui/joy";
@@ -12,7 +12,8 @@ export default function Sensor({ data }) {
     );
   };
 
-
+  const [selectedSensor, setSelectedSensor] = useState("all");
+  const [selectedAxis, setSelectedAxis] = useState("all");
 
   const dataCard = [
     { velocity: "0.71 mm/s", colors: ["green", "green", "green", "green"] },
@@ -38,14 +39,23 @@ export default function Sensor({ data }) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4 text-sm"></div>
           <div className="text-sm text-gray-500 flex items-center gap-4">
-            <Select defaultValue="all">
-              <Option value={"all"}>All Sensors</Option>
+            <Select
+              defaultValue="all"
+              onChange={(event, value) => setSelectedSensor(value)}
+            >
+              <Option value="all">All Sensors</Option>
               {data?.sensor?.list?.map((item) => (
-                <Option value={item?.sensorId}>Sensor {item?.sensorId}</Option>
+                <Option key={item?.sensorId} value={item?.sensorId}>
+                  Sensor {item?.sensorId}
+                </Option>
               ))}
             </Select>
-            <Select defaultValue="all">
-              <Option value="all">All </Option>
+
+            <Select
+              defaultValue="all"
+              onChange={(event, value) => setSelectedAxis(value)}
+            >
+              <Option value="all">All Axis </Option>
               <Option value="x">x</Option>
               <Option value="y">y</Option>
               <Option value="z">z</Option>
@@ -59,27 +69,38 @@ export default function Sensor({ data }) {
           <div className="mb-4">
             <RealtimeGraph
               data={data.sensor}
+              selectedSensor={selectedSensor}
+              selectedAxis={selectedAxis}
               title="Velocity RMS (mm/s)"
               color="#ef4444"
-              format="temperature"
-              anomalies={getAnomalies("temperature")}
+              format="vibration"
+              type="velocity"
+              anomalies={getAnomalies("vibration")}
             />
           </div>
-                <div className="mb-4">   
+          <div className="mb-4">
+        
+
+    <RealtimeGraph
+             data={data.sensor}
+            selectedSensor={selectedSensor}
+            title="Acceleration RMS (g)"
+            color="#6366f1"
+                type="acceleration"
+            format="acceleration"
+            anomalies={getAnomalies("acceleration")}
+          />
+
+          </div>
           <RealtimeGraph
-            data={data.vibration}
-            title="Temprature (Celsius)"
-            color="#f59e0b"
-            format="vibration"
-            anomalies={getAnomalies("vibration")}
-          /> </div>
-              <RealtimeGraph
-          data={data.acceleration}
-          title="Acceleration RMS (g)"
-          color="#6366f1"
-          format="acceleration"
-          anomalies={getAnomalies("acceleration")}
-        />
+              data={data.vibration}
+              selectedSensor={selectedSensor}
+              title="Temperature (°C)"
+              color="#f59e0b"
+               type="temperature"
+              format="temperature"
+              anomalies={getAnomalies("temperature")}
+            />{" "}
         </div>
 
         {/* Card takes 1/4 width on large screens */}
@@ -158,9 +179,7 @@ export default function Sensor({ data }) {
         </div>
       </div>
 
-      <div className="">
-    
-      </div>
+      <div className=""></div>
     </>
   );
 }

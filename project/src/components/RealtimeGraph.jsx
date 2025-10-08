@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
   LineChart,
   Line,
@@ -7,18 +7,23 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  Legend,
   ReferenceLine,
 } from "recharts";
 
 const RealtimeGraph = ({
-  data,
   title,
-  color,
+  color,type,
   format = "number",
   predictions = [],
   anomalies = [],
+  selectedAxis,
+  data,
+  selectedSensor,
+  sensors = [],
 }) => {
   const formatValue = (value) => {
+    if (value === null || value === undefined) return "-";
     switch (format) {
       case "currency":
         return `$${value.toLocaleString()}`;
@@ -38,94 +43,175 @@ const RealtimeGraph = ({
   const [combinedData, setCombinedData] = useState([]);
 
   const formatTime = (timestamp) => {
-    return new Date(timestamp).toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    if (!timestamp) return "-";
+    const d = new Date(Number(timestamp));
+    if (isNaN(d)) return "-";
+    const h = String(d.getHours()).padStart(2, "0");
+    const m = String(d.getMinutes()).padStart(2, "0");
+    const s = String(d.getSeconds()).padStart(2, "0");
+    return `${h}:${m}:${s}`;
   };
 
-console.log("RealtimeGraph Data:", data);
+  // prefer explicit sensors prop, then legacy `data` (array or { list: [...] }), then empty
+  const sensorsList = (() => {
+    if (Array.isArray(sensors) && sensors.length) return sensors;
+    if (sensors && !Array.isArray(sensors)) return [sensors];
+    if (Array.isArray(data) && data.length) return data;
+    if (data?.list && Array.isArray(data.list) && data.list.length) return data.list;
+    if (data && !Array.isArray(data)) return [data];
+    return [];
+  })();
 
-
-  // Combine actual data with predictions
-
-  //   const combinedData = [{
-
-  // "timestamp": 1759483641900,
-  // "value": 23.85301474008631}];
-
-  const prevOverallRef = useRef(null); // ✅ declare at component top-level
-
+  // Build combinedData: each point has a timestamp and keys like '245x','245y','245z', etc.
   useEffect(() => {
-    if (!data) return;
+    // Merge incoming readings into previous combinedData so the chart keeps
+    // history across streaming updates. This ensures lines connect between
+    // timestamps as more data arrives.
+    setCombinedData((prev) => {
+      const map = new Map();
 
-    // Coerce to number when possible for reliable comparison
-    const prev = prevOverallRef.current;
-    const curr =
-      data.overall === null || data.overall === undefined
-        ? data.overall
-        : Number(data.overall);
+      // seed map with previous points
+      prev.forEach((p) => map.set(p.timestamp, { ...p }));
 
-    const overallChanged =
-      (prev === null && curr !== null && curr !== undefined) ||
-      (prev !== null &&
-        prev !== undefined &&
-        curr !== null &&
-        curr !== undefined &&
-        prev !== curr) ||
-      (prev !== curr &&
-        (prev === null || prev === undefined) &&
-        (curr === null || curr === undefined) === false);
+      // incorporate incoming readings
+      sensorsList.forEach((item) => {
+        const ts = item?.lastUpdated
+          ? new Date(item.lastUpdated).getTime()
+          : Date.now();
+        if (!map.has(ts)) map.set(ts, { timestamp: ts });
+        const point = map.get(ts);
+        const id = item.sensorId || item.gvib?.sensorId;
+        const v =  type==="velocity" ?item.gvib?.vibrationVelocity : item.gvib?.accelerationRMS;
 
-    if (overallChanged) {
-      const newPoint = {
-        timestamp: data.lastUpdated
-          ? new Date(data.lastUpdated).getTime()
-          : Date.now(),
-        Temprature: data.temperature,
-        value: curr,
-      };
-
-      setCombinedData((prevArr) => {
-        // avoid duplicate timestamps
-        if (
-          prevArr.length &&
-          prevArr[prevArr.length - 1].timestamp === newPoint.timestamp
-        ) {
-          return prevArr;
+        if (id && v) {
+          point[`${id}x`] = typeof v.x === "number" ? v.x : Number(v.x || 0);
+          point[`${id}y`] = typeof v.y === "number" ? v.y : Number(v.y || 0);
+          point[`${id}z`] = typeof v.z === "number" ? v.z : Number(v.z || 0);
         }
-        return [...prevArr, newPoint].slice(-10);
       });
 
-      prevOverallRef.current = curr;
-    }
-    // if not changed, do nothing
-  }, [data?.overall, data?.lastUpdated, data?.temperature]);
+      const arr = Array.from(map.values()).sort(
+        (a, b) => a.timestamp - b.timestamp
+      );
+
+      // compute series keys from accumulated data
+      const allKeysSet = new Set();
+      arr.forEach((p) =>
+        Object.keys(p).forEach((k) => {
+          if (k !== "timestamp") allKeysSet.add(k);
+        })
+      );
+      const keys = Array.from(allKeysSet).sort();
+
+      // forward-fill across the accumulated array
+      const lastSeen = {};
+      const filled = arr.map((pt) => {
+        const newPt = { ...pt };
+        keys.forEach((k) => {
+          if (newPt[k] === undefined) {
+            newPt[k] = lastSeen[k] !== undefined ? lastSeen[k] : null;
+          } else {
+            lastSeen[k] = newPt[k];
+          }
+        });
+        return newPt;
+      });
+
+      return filled.slice(-100);
+    });
+  }, [sensors, data]);
 
   // Get anomaly timestamps for reference lines
   const anomalyTimestamps = anomalies.map((a) => a.timestamp);
 
+  // derive series keys from combinedData (accumulated) so coloring/order stays
+  // consistent as data arrives.
+  const seriesKeys = useMemo(() => {
+    const set = new Set();
+    combinedData.forEach((p) =>
+      Object.keys(p).forEach((k) => {
+        if (k !== "timestamp") set.add(k);
+      })
+    );
+    return Array.from(set).sort();
+  }, [combinedData]);
+
+  // Determine which series to show based on selectedSensor.
+  // If selectedSensor is 'all' / falsy -> show all; otherwise only keys starting with the selected id.
+  const displayedSeriesKeys = useMemo(() => {
+    let keys = seriesKeys;
+    if (selectedSensor && String(selectedSensor).toLowerCase() !== "all") {
+      const sel = String(selectedSensor);
+      keys = keys.filter((k) => k.startsWith(sel));
+    }
+    if (selectedAxis && String(selectedAxis).toLowerCase() !== "all") {
+      const ax = String(selectedAxis).toLowerCase();
+      // filter keys that end with the axis letter (x/y/z)
+      keys = keys.filter((k) => k.toLowerCase().endsWith(ax));
+    }
+    return keys;
+  }, [seriesKeys, selectedSensor]);
+
+  // simple color palette to cycle through
+  const palette = [
+    "#3b82f6",
+    "#ef4444",
+    "#10b981",
+    "#f59e0b",
+    "#8b5cf6",
+    "#06b6d4",
+    "#ec4899",
+    "#6366f1",
+    "#f97316",
+    "#14b8a6",
+  ];
+
+  // unit label for Y axis based on format
+  const unitLabel = useMemo(() => {
+    switch (format) {
+      case "temperature":
+        return "°C";
+      case "vibration":
+        return "mm/s";
+      case "acceleration":
+        return "g";
+      case "percentage":
+        return "%";
+      default:
+        return "";
+    }
+  }, [format]);
+
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
-      const data = payload[0].payload;
+      const dataPoint = payload[0].payload;
       return (
-        <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
+        <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg ">
           <p className="text-sm text-gray-600">{formatTime(label)}</p>
-          <p className="text-sm font-semibold" style={{ color: "#3b82f6" }}>
-            Temprature : {payload[1].value}°C
-          </p>
-          <p
-            className="text-sm font-semibold"
-            style={{ color: payload[0].color }}
-          >
-            Usage : {formatValue(payload[0].value)}%
-          </p>
-          {data.predicted && (
+          <div className="mt-1 space-y-1">
+            {payload.map((p) => {
+              const name = p.name || p.dataKey;
+              const val = p.value;
+              return (
+                <div key={name} className="flex items-center gap-2">
+                  <span
+                    className="w-2 h-2 inline-block rounded"
+                    style={{ background: p.color }}
+                  />
+                  <span className="text-sm font-medium">{name}:</span>
+                  <span className="text-sm text-gray-700">
+                    {val === undefined || val === null ? "-" : formatValue(val)}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+          {dataPoint?.predicted && (
             <p className="text-xs text-purple-600">
-              Predicted ({(data.confidence * 100).toFixed(0)}% confidence)
+              Predicted ({(dataPoint.confidence * 100).toFixed(0)}% confidence)
             </p>
           )}
-          {data.anomaly && (
+          {dataPoint?.anomaly && (
             <p className="text-xs text-orange-600">⚠️ Anomaly detected</p>
           )}
         </div>
@@ -166,13 +252,16 @@ console.log("RealtimeGraph Data:", data);
               tickFormatter={formatTime}
               stroke="#6b7280"
               fontSize={12}
+           
             />
             <YAxis
               // tickFormatter={formatValue}
               stroke="#6b7280"
               fontSize={12}
+              label={{ value: unitLabel, angle: -90, position: "insideLeft", offset: 0 }}
             />
             <Tooltip content={<CustomTooltip />} />
+            <Legend verticalAlign="top" height={48} wrapperStyle={{ fontSize: 12, top:0, bottom:10}} style={{padding:"1rem"}} />
 
             {/* Anomaly reference lines */}
             {anomalyTimestamps.map((timestamp, index) => (
@@ -185,54 +274,20 @@ console.log("RealtimeGraph Data:", data);
               />
             ))}
 
-            {/* Overall data line */}
-            <Line
-              type="monotone"
-              dataKey="value"
-              stroke={color}
-              strokeWidth={2}
-              dot={true}
-              activeDot={{
-                r: 5,
-                stroke: color,
-                strokeWidth: 2,
-                fill: "#ffffff",
-              }}
-            />
-
-            {/* Temperature data line */}
-            <Line
-              type="monotone"
-              dataKey="Temprature"
-              stroke="#3b82f6" // blue color for temperature
-              strokeWidth={2}
-              dot={true}
-              activeDot={{
-                r: 5,
-                stroke: "#3b82f6",
-                strokeWidth: 2,
-                fill: "#ffffff",
-              }}
-            />
-
-            {/* Prediction line */}
-            {predictions.length > 0 && (
+            {/* Dynamic lines for each sensor-axis series (e.g. '245x','245y','245z') */}
+            {displayedSeriesKeys.map((key, idx) => (
               <Line
+                key={key}
                 type="monotone"
-                dataKey="value"
-                stroke="#8b5cf6"
+                dataKey={key}
+                name={key}
+                stroke={palette[idx % palette.length]}
                 strokeWidth={2}
-                strokeDasharray="5 5"
                 dot={false}
-                activeDot={{
-                  r: 4,
-                  stroke: "#8b5cf6",
-                  strokeWidth: 2,
-                  fill: "#ffffff",
-                }}
-                data={predictions}
+                isAnimationActive={false}
+                connectNulls={true}
               />
-            )}
+            ))}
           </LineChart>
         </ResponsiveContainer>
       </div>
@@ -241,22 +296,23 @@ console.log("RealtimeGraph Data:", data);
 };
 
 const propsAreEqual = (prev, next) => {
-  // Skip render when overall is unchanged and other simple props are equal
-  const prevOverall = prev?.data?.overall;
-  const nextOverall = next?.data?.overall;
-
-  if (prevOverall !== nextOverall) return false;
+  // keep it conservative: re-render when important props change
   if (prev.title !== next.title) return false;
   if (prev.color !== next.color) return false;
   if (prev.format !== next.format) return false;
+  if (prev.selectedSensor !== next.selectedSensor) return false;
+  if (prev.selectedAxis !== next.selectedAxis) return false;
 
-  // shallow compare lengths for arrays (cheap)
   if ((prev.predictions?.length || 0) !== (next.predictions?.length || 0))
     return false;
   if ((prev.anomalies?.length || 0) !== (next.anomalies?.length || 0))
     return false;
 
-  return true; // props considered equal -> skip render
+  // if data/sensors reference changed, re-render
+  if (prev.sensors !== next.sensors) return false;
+  if (prev.data !== next.data) return false;
+
+  return true;
 };
 
 export default React.memo(RealtimeGraph, propsAreEqual);
