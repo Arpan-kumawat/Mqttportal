@@ -3,19 +3,33 @@ import {
   BarChart3, Home, TrendingUp, Users, ShoppingCart, Settings, X, 
   Brain, AlertTriangle, Thermometer, Activity, Zap ,Laptop,History,BellRing
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { useWebSocket } from '../hooks/useWebSocket';
 
 
 // ...existing imports...
 
-const Sidebar = ({ isOpen, onClose,setMenuPage }) => {
+const Sidebar = ({ isOpen, onClose }) => {
   const [activeTab, setActiveTab] = useState('Dashboard');
+  const { pathname } = useLocation();
+
+  React.useEffect(() => {
+    // Map pathname to sidebar label so active state follows URL
+    const map = {
+      '/dashboard': 'Dashboard',
+      '/real-time': 'Real Time',
+      '/user': 'Users',
+      '/sensor-info': 'Sensors Info',
+      '/setting': 'Settings'
+    };
+    const label = map[pathname];
+    if (label) setActiveTab(label);
+  }, [pathname]);
   const { isSystemActive } = useWebSocket();
 
   const menuItems = [
     { icon: Home, label: 'Dashboard', route:'dashboard'},
-    { icon: BarChart3, label: 'Analytics' },
+    { icon: BarChart3, label: 'Real Time',route:'real-time' },
     // { icon: Brain, label: 'AI Predictions' },
     { icon: History, label: 'History' },
     { icon: Users, label: 'Users',route:'user' },
@@ -25,7 +39,7 @@ const Sidebar = ({ isOpen, onClose,setMenuPage }) => {
     { icon: BellRing, label: 'Alaram' },
     { icon: Settings, label: 'Settings',route:'setting' }
   ];
-  const navigate = useNavigate();
+  
   return (
     <>
       {/* Mobile overlay */}
@@ -63,23 +77,36 @@ const Sidebar = ({ isOpen, onClose,setMenuPage }) => {
           <ul className="space-y-2 px-4">
             {menuItems.map((item) => (
               <li key={item.label}>
-                <button
-                  className={`
-                    w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-all duration-200
-                    ${activeTab === item.label
-                      ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg'
-                      : 'text-gray-300 hover:bg-slate-700 hover:text-white'
-                    }
-                  `}
-                  onClick={() => {
-                    setActiveTab(item.label);
-                    setMenuPage(item.label);
-                    if (item.route) navigate(`/${item.route}`);
-                  }}
-                >
-                  <item.icon className="h-5 w-5" />
-                  {item.label}
-                </button>
+                {item.route ? (
+                  <NavLink
+                    to={`/${item.route}`}
+                    className={({ isActive }) => `w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-all duration-200 ${isActive ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg' : 'text-gray-300 hover:bg-slate-700 hover:text-white'}`}
+                    onClick={() => {
+                      setActiveTab(item.label);
+                      // close mobile sidebar when navigating
+                      if (isOpen) onClose();
+                    }}
+                  >
+                    <item.icon className="h-5 w-5" />
+                    {item.label}
+                  </NavLink>
+                ) : (
+                  <button
+                    className={`
+                      w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-all duration-200
+                      ${activeTab === item.label
+                        ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg'
+                        : 'text-gray-300 hover:bg-slate-700 hover:text-white'
+                      }
+                    `}
+                    onClick={() => {
+                      setActiveTab(item.label);
+                    }}
+                  >
+                    <item.icon className="h-5 w-5" />
+                    {item.label}
+                  </button>
+                )}
               </li>
             ))}
           </ul>

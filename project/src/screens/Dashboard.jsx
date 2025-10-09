@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import RealtimeChart from '../components/RealtimeChart';
 import AIInsightsPanel from '../components/AIInsightsPanel';
 import { useWebSocket } from '../hooks/useWebSocket';
@@ -11,9 +11,13 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const { data, isConnected, aiInsights } = useWebSocket();
 
+  useEffect(() => {
+    console.debug('[Dashboard] mounted');
+    return () => console.debug('[Dashboard] unmounted');
+  }, []);
+
   const tabs = [
     { id: 'overview', label: 'Overview' },
-    { id: 'sensors', label: 'Sensor Data' },
     { id: 'Health', label: 'Health Metrics' },
 
     // { id: 'ai-predictions', label: 'AI Predictions' }
@@ -137,9 +141,7 @@ const Dashboard = () => {
         </div>
       )}
 
-      {activeTab === 'sensors' && (
-        <Sensor data={data} />
-      )}
+   
 
       {activeTab === 'ai-predictions' && (
         <div className="space-y-6">

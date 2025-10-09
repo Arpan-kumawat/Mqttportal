@@ -49,8 +49,8 @@ const Header = ({ onMenuToggle, isSidebarOpen, aiInsights,MenuPage }) => {
         
         <div className="flex items-center gap-3 pl-3 border-l border-gray-200">
           <div className="hidden sm:block text-right">
-            <p className="text-sm font-medium text-gray-900">{user?.name}</p>
-            <p className="text-xs text-gray-500">{user?.email}</p>
+            <p className="text-sm font-medium text-gray-900">{user?.emp_name}</p>
+            <p className="text-xs text-gray-500">{user?.emp_email_id}</p>
           </div>
           
           <div className="flex items-center gap-2">

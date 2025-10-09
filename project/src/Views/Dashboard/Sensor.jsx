@@ -1,10 +1,23 @@
 import React, { useState } from "react";
-import Select from "@mui/joy/Select";
-import Option from "@mui/joy/Option";
 import { Card, CardContent, Typography } from "@mui/joy";
 import RealtimeGraph from "../../components/RealtimeGraph";
+import { Select, Option, Checkbox, FormLabel, Stack } from "@mui/joy";
+import { useWebSocket } from "../../hooks/useWebSocket";
 
-export default function Sensor({ data }) {
+const ITEM_HEIGHT = 48;
+const ITEM_PADDING_TOP = 8;
+const MenuProps = {
+  PaperProps: {
+    style: {
+      maxHeight: ITEM_HEIGHT * 4.5 + ITEM_PADDING_TOP,
+      width: 250,
+    },
+  },
+};
+
+export default function Sensor() {
+ const { data, isConnected, aiInsights } = useWebSocket();
+
   const getAnomalies = (type) => {
     const series = data[type] || [];
     return data.anomalies.filter((anomaly) =>
@@ -12,8 +25,8 @@ export default function Sensor({ data }) {
     );
   };
 
-  const [selectedSensor, setSelectedSensor] = useState("all");
-  const [selectedAxis, setSelectedAxis] = useState("all");
+  const [selectedSensor, setSelectedSensor] = useState(["all"]);
+  const [selectedAxis, setSelectedAxis] = useState(["all"]);
 
   const dataCard = [
     { velocity: "0.71 mm/s", colors: ["green", "green", "green", "green"] },
@@ -33,36 +46,159 @@ export default function Sensor({ data }) {
     red: "bg-red-500",
   };
 
+  const handleChange = (event, newValue) => {
+    // Ensure newValue is an array for multiple select
+    const values = Array.isArray(newValue) ? newValue : [newValue];
+    const prev = selectedSensor || [];
+
+    // If 'all' is included in the new values
+    if (values.includes("all")) {
+      // If previous selection did NOT include 'all', the user just clicked 'all' -> select only 'all'
+      if (!prev.includes("all")) {
+        setSelectedSensor(["all"]);
+        return;
+      }
+
+      // If previous included 'all' but new values also include other sensors (user clicked an individual sensor while 'all' was selected),
+      // remove 'all' and keep the individual sensors
+      if (values.length > 1) {
+        setSelectedSensor(values.filter((v) => v !== "all"));
+        return;
+      }
+
+      // Fallback: keep only 'all'
+      setSelectedSensor(["all"]);
+      return;
+    }
+
+    // If no 'all' in new selection and user cleared everything, fall back to 'all'
+    if (values.length === 0) {
+      setSelectedSensor(["all"]);
+      return;
+    }
+
+    // Normal case: set the selected sensors (individual sensors selected while 'all' not involved)
+    setSelectedSensor(values);
+  };
+
+ const handleChangeAxis = (event, newValue) => {
+    // Ensure newValue is an array for multiple select
+    const values = Array.isArray(newValue) ? newValue : [newValue];
+    const prev = selectedAxis || [];
+
+    // If 'all' is included in the new values
+    if (values.includes("all")) {
+      // If previous selection did NOT include 'all', the user just clicked 'all' -> select only 'all'
+      if (!prev.includes("all")) {
+        setSelectedAxis(["all"]);
+        return;
+      }
+
+      // If previous included 'all' but new values also include other axes (user clicked an individual axis while 'all' was selected),
+      // remove 'all' and keep the individual axes
+      if (values.length > 1) {
+        setSelectedAxis(values.filter((v) => v !== "all"));
+        return;
+      }
+
+      // Fallback: keep only 'all'
+      setSelectedAxis(["all"]);
+      return;
+    }
+
+    // If no 'all' in new selection and user cleared everything, fall back to 'all'
+    if (values.length === 0) {
+      setSelectedAxis(["all"]);
+      return;
+    }
+
+    // Normal case: set the selected axes (individual axes selected while 'all' not involved)
+    setSelectedAxis(values);
+  };
+
   return (
     <>
       <div className="mb-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4 text-sm">
-         
-              <h3 className="text-lg font-semibold text-gray-900">  {data.sensor?.list[0]?.gvib?.sensorType}</h3>
+            <h3 className="text-lg font-semibold text-gray-900">
+              {data.sensor?.list &&  data.sensor?.list[0]?.gvib?.sensorType}
+            </h3>
           </div>
           <div className="text-sm text-gray-500 flex items-center gap-4">
-            <Select
-              defaultValue="all"
-              onChange={(event, value) => setSelectedSensor(value)}
-            >
-              <Option value="all">All Sensors</Option>
-              {data?.sensor?.list?.map((item) => (
-                <Option key={item?.sensorId} value={item?.sensorId}>
-                  Sensor {item?.sensorId}
-                </Option>
-              ))}
-            </Select>
+       
 
-            <Select
-              defaultValue="all"
-              onChange={(event, value) => setSelectedAxis(value)}
-            >
-              <Option value="all">All Axis </Option>
-              <Option value="x">x</Option>
-              <Option value="y">y</Option>
-              <Option value="z">z</Option>
-            </Select>
+            <Stack sx={{ m: 1,mr:0, width: 200 }}>
+              <Select
+                multiple
+                size="sm"
+                value={selectedSensor}
+                onChange={handleChange}
+              >
+                <Option value="all">
+                  <Checkbox
+                    size="sm"
+                    checked={selectedSensor.includes("all")}
+                    sx={{ mr: 1 }}
+                  />
+                  All Sensors
+                </Option>
+                {data?.sensor?.list?.map((item) => (
+                  <Option key={item?.sensorId} value={item?.sensorId}>
+                    <Checkbox
+                      size="sm"
+                      checked={selectedSensor.includes(item?.sensorId)}
+                      sx={{ mr: 1 }}
+                    />
+                    Sensor {item?.sensorId}
+                  </Option>
+                ))}
+              </Select>
+            </Stack>
+
+
+             <Stack sx={{ m: 1, width: 100 }}>
+              <Select
+                multiple
+                size="sm"
+                value={selectedAxis}
+                onChange={handleChangeAxis}
+              >
+      
+
+<Option value="all">
+   <Checkbox
+                    size="sm"
+                    checked={selectedAxis.includes("all")}
+                    sx={{ mr: 1 }}
+                  />
+                  All Axis </Option>
+              <Option value="x"> 
+                 <Checkbox
+                    size="sm"
+                    checked={selectedAxis.includes("x")}
+                    sx={{ mr: 1 }}
+                  />
+                x</Option>
+              <Option value="y">
+                  <Checkbox
+                    size="sm"
+                    checked={selectedAxis.includes("y")}
+                    sx={{ mr: 1 }}
+                  />
+                y</Option>
+              <Option value="z">
+                   <Checkbox
+                    size="sm"
+                    checked={selectedAxis.includes("z")}
+                    sx={{ mr: 1 }}
+                  />
+                z</Option>
+
+
+              </Select>
+            </Stack>
+
           </div>
         </div>
       </div>
@@ -94,14 +230,14 @@ export default function Sensor({ data }) {
             />
           </div>
           <RealtimeGraph
-              data={data.sensor}
-              selectedSensor={selectedSensor}
-              title="Temperature (°C)"
-              color="#f59e0b"
-               type="temperature"
-              format="temperature"
-              anomalies={getAnomalies("temperature")}
-            />
+            data={data.sensor}
+            selectedSensor={selectedSensor}
+            title="Temperature (°C)"
+            color="#f59e0b"
+            type="temperature"
+            format="temperature"
+            anomalies={getAnomalies("temperature")}
+          />
         </div>
 
         {/* Card takes 1/4 width on large screens */}

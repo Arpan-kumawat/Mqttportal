@@ -7,6 +7,7 @@ import Setting from "../screens/Setting";
 import MainLayout from "../layout/MainLayout.jsx";
 import User from "../screens/User.jsx";
 import SensorInfo from "../screens/SensorInfo.jsx";
+import RealTime from "../screens/RealTime.jsx";
 
 const AppRoutes = () => {
   const { user } = useAuth();
@@ -32,6 +33,7 @@ const AppRoutes = () => {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/setting" element={<Setting />} />
              <Route path="/user" element={<User />} />
+                  <Route path="/real-time" element={<RealTime />} />
                 <Route path="/sensor-info" element={<SensorInfo />} />
             {/* add more protected routes here */}
           </Route>

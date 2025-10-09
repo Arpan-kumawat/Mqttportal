@@ -46,8 +46,8 @@ function parseGvibData(buf) {
         0x30: "SVT400-A vibration sensor acceleration"
     };
 
-    const scaleV = 409.6;
-    const scaleG = 2367.135;
+    const scaleV =  process.env.SCALE_V; 
+    const scaleG =  process.env.SCALE_G;
 
     const sensorTypeCode = buf.readUInt8(0);
     const sensorType = sensorTypes[sensorTypeCode] || "Unknown";
@@ -97,7 +97,7 @@ function parseSnsInfo(buffer) {
     for (let i = 5; i <= 10; i++) {
         mac.push(buffer[i].toString(16).padStart(2, '0'));
     }
-    const rssi = -buffer[11];
+    const rssi = buffer[11]-256;
     const versionRaw = buffer[12];
     const version = versionRaw / 10;
     const group = buffer[13];

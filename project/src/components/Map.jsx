@@ -2,11 +2,13 @@ import React from "react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
+import CircularProgress from "@mui/joy/CircularProgress";
 
 // Fix marker icons
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
-  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+  iconRetinaUrl:
+    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
   iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
   shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
 });
@@ -15,17 +17,14 @@ const MyMap = ({ data }) => {
   const locations = [
     // { id: 1, name: "New Delhi", lat: 28.6139, lng: 77.2090 },
     {
-      id: 1, name: data?.gateway?.name || "", lat: data?.gateway?.latitude || 10
-      , lng: data?.gateway?.longitude || 10
+      id: 1,
+      name: data?.gateway?.name || "",
+      lat: data?.gateway?.latitude || 10,
+      lng: data?.gateway?.longitude || 10,
     },
-
-
-
-
   ];
 
-  const center = [data?.gateway?.latitude || 10,
-  data?.gateway?.longitude || 10]; // Central location(so all markers are visible)
+  const center = [data?.gateway?.latitude, data?.gateway?.longitude]; // Central location(so all markers are visible)
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
@@ -46,24 +45,37 @@ const MyMap = ({ data }) => {
           )}
         </div> */}
       </div>
-      <div style={{ height: "35vh", width: "100%" }}>
-        <MapContainer center={center} zoom={8} style={{ height: "100%", width: "100%" }} zoomControl={false} >
-          <TileLayer
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            attribution="&copy; OpenStreetMap contributors"
-          />
 
-          {locations.map((loc) => (
-            <Marker key={loc.id} position={[loc.lat, loc.lng]}>
-              <Popup>
-                <b>{loc.name}</b>
-                <br />
-                Lat: {loc.lat}, Lng: {loc.lng}
-              </Popup>
-            </Marker>
-          ))}
-        </MapContainer>
-      </div>
+      {data?.gateway?.latitude ? ( 
+        <div style={{ height: "35vh", width: "100%" }}>
+          <MapContainer
+            center={center}
+            zoom={8}
+            style={{ height: "100%", width: "100%" }}
+            zoomControl={false}
+          >
+            <TileLayer
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              attribution="&copy; OpenStreetMap contributors"
+            />
+
+            {locations.map((loc) => (
+              <Marker key={loc.id} position={[loc.lat, loc.lng]}>
+                <Popup>
+                  <b>{loc.name}</b>
+                  <br />
+                  Lat: {loc.lat}, Lng: {loc.lng}
+                </Popup>
+              </Marker>
+            ))}
+          </MapContainer>
+        </div>
+      ) : (
+        <div className="flex items-center justify-center h-36">
+
+        <CircularProgress variant="soft" />
+        </div>
+      )}
     </div>
   );
 };

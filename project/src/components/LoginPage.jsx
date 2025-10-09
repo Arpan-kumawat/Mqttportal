@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { LogIn, Eye, EyeOff, Brain } from 'lucide-react';
 import { Lock, User, AlertCircle, } from 'lucide-react';
 import { Activity } from 'lucide-react';
-import { auth_user } from '../utils/Helper';
+
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -23,12 +23,12 @@ const LoginPage = () => {
       return;
     }
 
-    const success = await auth_user({email, password});
+    const success = await login({email, password});
 
     if (success) {
       navigate('/dashboard');
     } else {
-      setError('Invalid credentials. Use admin / 1234');
+      setError('Invalid credentials.');
     }
   };
 
@@ -116,11 +116,11 @@ const LoginPage = () => {
 
           </form>
 
-          <div className="mt-6 text-center">
+          {/* <div className="mt-6 text-center">
             <p className="text-gray-500 text-sm">
               Credentials: <span className="text-blue-600">admin</span> / <span className="text-blue-600">1234</span>
             </p>
-          </div>
+          </div> */}
         </div>
       </div>
     </>);
