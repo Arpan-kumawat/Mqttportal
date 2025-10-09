@@ -10,6 +10,7 @@ import {
   Legend,
   ReferenceLine,
 } from "recharts";
+import { Play ,Pause } from 'lucide-react';
 
 const RealtimeGraph = ({
   title,
@@ -24,19 +25,18 @@ const RealtimeGraph = ({
   sensors = [],
 }) => {
   const [combinedData, setCombinedData] = useState([]);
+  const [isPaused, setIsPaused] = useState(false); // 👈 new state
   const isMounted = useRef(true);
   const updateTimeout = useRef(null);
 
   // cleanup on unmount
   useEffect(() => {
     isMounted.current = true;
-    console.debug("[RealtimeGraph] mounted", title);
     return () => {
       isMounted.current = false;
       if (updateTimeout.current) clearTimeout(updateTimeout.current);
-      console.debug("[RealtimeGraph] unmounted", title);
     };
-  }, [title]);
+  }, []);
 
   // formatters
   const formatValue = (value) => {
@@ -61,10 +61,10 @@ const RealtimeGraph = ({
     if (!timestamp) return "-";
     const d = new Date(Number(timestamp));
     if (isNaN(d)) return "-";
-    const h = String(d.getHours()).padStart(2, "0");
-    const m = String(d.getMinutes()).padStart(2, "0");
-    const s = String(d.getSeconds()).padStart(2, "0");
-    return `${h}:${m}:${s}`;
+    return `${d.getHours().toString().padStart(2, "0")}:${d
+      .getMinutes()
+      .toString()
+      .padStart(2, "0")}:${d.getSeconds().toString().padStart(2, "0")}`;
   };
 
   // derive sensors list
@@ -76,14 +76,13 @@ const RealtimeGraph = ({
     return [];
   }, [sensors, data]);
 
-  // --- Main merge logic with throttling + cleanup ---
+  // --- Main merge logic with throttling + pause control ---
   useEffect(() => {
-    if (!sensorsList?.length) return;
+    if (!sensorsList?.length || isPaused) return; // 👈 skip updates when paused
 
-    // throttle updates every 500ms to avoid blocking route transitions
     if (updateTimeout.current) clearTimeout(updateTimeout.current);
     updateTimeout.current = setTimeout(() => {
-      if (!isMounted.current) return;
+      if (!isMounted.current || isPaused) return;
 
       setCombinedData((prev) => {
         const map = new Map();
@@ -138,16 +137,16 @@ const RealtimeGraph = ({
           return newPt;
         });
 
-        return filled.slice(-100); // keep last 100 points
+        return filled.slice(-100);
       });
-    }, 10);
+    }, 100);
 
     return () => clearTimeout(updateTimeout.current);
-  }, [JSON.stringify(sensorsList)]);
+  }, [JSON.stringify(sensorsList), isPaused]); // 👈 re-run when pause toggled
 
   const anomalyTimestamps = anomalies.map((a) => a.timestamp);
 
-  // compute displayed series
+  // displayed series logic
   const displayedSeriesKeys = useMemo(() => {
     const allKeys = new Set();
     combinedData.forEach((p) =>
@@ -173,7 +172,6 @@ const RealtimeGraph = ({
       return new Set([String(sel)]);
     };
     const selSet = normalizeSelected(selectedSensor);
-
     if (selSet) {
       keys = keys.filter((k) =>
         Array.from(selSet).some((id) => k.startsWith(id))
@@ -194,9 +192,7 @@ const RealtimeGraph = ({
       };
       const axisSet = normalizeAxis(selectedAxis);
       if (axisSet) {
-        keys = keys.filter((k) =>
-          axisSet.has(k.slice(-1).toLowerCase())
-        );
+        keys = keys.filter((k) => axisSet.has(k.slice(-1).toLowerCase()));
       }
     }
 
@@ -235,7 +231,7 @@ const RealtimeGraph = ({
     if (active && payload && payload.length) {
       const dataPoint = payload[0].payload;
       return (
-        <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg ">
+        <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
           <p className="text-sm text-gray-600">{formatTime(label)}</p>
           <div className="mt-1 space-y-1">
             {payload.map((p) => (
@@ -277,7 +273,6 @@ const RealtimeGraph = ({
               value: unitLabel,
               angle: -90,
               position: "insideLeft",
-              offset: 0,
             }}
           />
           <Tooltip content={<CustomTooltip />} />
@@ -301,7 +296,7 @@ const RealtimeGraph = ({
         </LineChart>
       </ResponsiveContainer>
     ),
-    [combinedData, displayedSeriesKeys, anomalies]
+    [combinedData, displayedSeriesKeys, anomalies, unitLabel]
   );
 
   return (
@@ -309,6 +304,14 @@ const RealtimeGraph = ({
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setIsPaused((p) => !p)}
+            className={`px-3 py-1 text-sm rounded-md 
+                 "  border border-gray-300 text-gray-700 bg-gray-500"
+            `}
+          >
+            {isPaused ? <Play strokeWidth={"1px"}/> : <Pause strokeWidth={"1px"}/>}
+          </button>
           {predictions.length > 0 && (
             <div className="flex items-center gap-1 text-xs text-purple-600 bg-purple-50 px-2 py-1 rounded-full">
               <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
@@ -329,7 +332,7 @@ const RealtimeGraph = ({
   );
 };
 
-// simpler memo check — no deep compares, avoids blocking
+// memo optimization
 export default React.memo(RealtimeGraph, (prev, next) => {
   return (
     prev.title === next.title &&

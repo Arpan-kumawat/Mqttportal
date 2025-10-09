@@ -6,6 +6,8 @@ import {
 import { NavLink, useLocation } from 'react-router-dom';
 import { useWebSocket } from '../hooks/useWebSocket';
 
+import logo from "../assets/NBC.png";
+
 
 // ...existing imports...
 
@@ -61,8 +63,8 @@ const Sidebar = ({ isOpen, onClose }) => {
             {/* <div className="h-8 w-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
               <Brain className="h-5 w-5" />
             </div> */}
-         <img style={{maxWidth:"20%"}} src='https://upload.wikimedia.org/wikipedia/en/thumb/f/fd/NBC_Bearings.svg/100px-NBC_Bearings.svg.png' alt='Logo' />
-            <span className="font-semibold text-lg">NBC Bearings</span>
+         <img style={{maxWidth:"100%"}} src={logo} alt='Logo' />
+           
           </div>
           
           <button
