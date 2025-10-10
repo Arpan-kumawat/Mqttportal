@@ -246,7 +246,7 @@ mqttClient.on("message", (topic, message) => {
             .floatField("velox", vibrationVelocity?.x || 0)
             .floatField("veloy", vibrationVelocity?.y || 0)
             .floatField("veloz", vibrationVelocity?.z || 0)
-            .floatField("grmsx", accelerationRMS?.x || 0)
+            .floatField("grmsx", accelerationRMS?.x   || 0)
             .floatField("grmsy", accelerationRMS?.y || 0)
             .floatField("grmsz", accelerationRMS?.z || 0);
         } else if (topic.endsWith("sns_info")) {

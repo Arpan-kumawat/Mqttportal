@@ -1,6 +1,6 @@
 import axios from "axios";
 import { apiPost } from "../api/ServiceManager";
-import { AUTH_USER } from "./constant";
+import { AUTH_USER, HISTORY } from "./constant";
 
 let optionAxios = {
   headers: {
@@ -33,6 +33,19 @@ const auth_user = async (user) => {
   );
 };
 
+const getHistoryData = async (input) => {
+  input = { ...input };
+
+  return await axios
+    .post(HISTORY, input, optionAxios)
+    .then(({ data }) => {
+      return data;
+    })
+    .catch((error) => {
+      console.log(error);
+    });
+};
+
 const isLogin = () => {
   let user = localStorage.getItem("AUTH_DATA");
   //console.log(user)
@@ -59,4 +72,4 @@ const getUserPermission = () => {
   return access;
 };
 
-export { auth_user, isLogin, toSnakeCase, getUserPermission };
+export { auth_user, isLogin, toSnakeCase, getUserPermission ,getHistoryData};

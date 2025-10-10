@@ -20,6 +20,7 @@ const Sidebar = ({ isOpen, onClose }) => {
     const map = {
       '/dashboard': 'Dashboard',
       '/real-time': 'Real Time',
+       '/history': 'History',
       '/user': 'Users',
       '/sensor-info': 'Sensors Info',
       '/setting': 'Settings'
@@ -33,7 +34,7 @@ const Sidebar = ({ isOpen, onClose }) => {
     { icon: Home, label: 'Dashboard', route:'dashboard'},
     { icon: BarChart3, label: 'Real Time',route:'real-time' },
     // { icon: Brain, label: 'AI Predictions' },
-    { icon: History, label: 'History' },
+    { icon: History, label: 'History' ,route:'history'},
     { icon: Users, label: 'Users',route:'user' },
     // { icon: ShoppingCart, label: 'Orders' },
     { icon: Thermometer, label: 'Sensors Info',route:'sensor-info' },
@@ -55,7 +56,7 @@ const Sidebar = ({ isOpen, onClose }) => {
       {/* Sidebar */}
       <aside className={`
         fixed lg:static inset-y-0 left-0 z-50
-        w-64 bg-gradient-to-b from-slate-900 to-slate-800 text-white transform transition-transform duration-300 ease-in-out
+        w-64 bg-gradient-to-b from-white to-white text-white transform transition-transform duration-300 ease-in-out shadow-lg
         ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
         <div className="flex items-center justify-between h-16 px-6 border-b border-slate-700">
@@ -82,7 +83,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                 {item.route ? (
                   <NavLink
                     to={`/${item.route}`}
-                    className={({ isActive }) => `w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-all duration-200 ${isActive ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg' : 'text-gray-300 hover:bg-slate-700 hover:text-white'}`}
+                    className={({ isActive }) => `w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-all duration-200 ${isActive ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg' : 'text-black hover:bg-gradient-to-r from-blue-600 to-purple-600 hover:text-white'}`}
                     onClick={() => {
                       setActiveTab(item.label);
                       // close mobile sidebar when navigating
@@ -98,7 +99,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                       w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-all duration-200
                       ${activeTab === item.label
                         ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg'
-                        : 'text-gray-300 hover:bg-slate-700 hover:text-white'
+                        : 'text-black hover:bg-gradient-to-r from-blue-600 to-purple-600 hover:text-white'
                       }
                     `}
                     onClick={() => {
@@ -115,18 +116,19 @@ const Sidebar = ({ isOpen, onClose }) => {
         </nav>
         
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-slate-700">
-          <div className="bg-gradient-to-r from-slate-800 to-slate-700 rounded-lg p-3 border border-slate-600">
+         
+              <div className="bg-white rounded-xl shadow-sm border border-gray-300 p-3 hover:shadow-md transition-shadow"> 
             <div className="flex items-center gap-2 mb-2">
               <div className={`h-2 w-2  ${isSystemActive ?  'bg-green-400 ' : 'bg-red-400'}  rounded-full`}></div>
-              <span className="text-sm font-medium"> {isSystemActive?"System Active" : "System Inactive" } </span>
+              <span className="text-sm font-medium text-black "> {isSystemActive?"System Active" : "System Inactive" } </span>
             </div>
             <div className="flex items-center gap-2 mb-1">
               <Zap className="h-3 w-3 text-purple-400" />
-              <span className="text-xs text-gray-400">Real-time predictions</span>
+              <span className="text-xs text-gray-900">Real-time predictions</span>
             </div>
             <div className="flex items-center gap-2">
               <AlertTriangle className="h-3 w-3 text-orange-400" />
-              <span className="text-xs text-gray-400">Anomaly detection</span>
+              <span className="text-xs text-gray-900">Anomaly detection</span>
             </div>
           </div>
         </div>

@@ -34,8 +34,8 @@ class DeviceController {
   async GetHistoryData(req, res) {
     try {
       const body = req.body || {};
-      const { sensor, from, to } = body;
-      if (!sensor || !from || !to) {
+      const { from, to } = body;
+      if ( !from || !to) {
         // respond with 400 Bad Request for missing required field
         return res
           .status(400)

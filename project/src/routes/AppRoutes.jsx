@@ -1,4 +1,9 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
 import Dashboard from "../screens/Dashboard.jsx";
 import LoginPage from "../components/LoginPage";
 import PrivateRoute from "./PrivateRoute.jsx";
@@ -8,6 +13,7 @@ import MainLayout from "../layout/MainLayout.jsx";
 import User from "../screens/User.jsx";
 import SensorInfo from "../screens/SensorInfo.jsx";
 import RealTime from "../screens/RealTime.jsx";
+import History from "../screens/History.jsx";
 
 const AppRoutes = () => {
   const { user } = useAuth();
@@ -32,9 +38,10 @@ const AppRoutes = () => {
           <Route element={<MainLayout />}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/setting" element={<Setting />} />
-             <Route path="/user" element={<User />} />
-                  <Route path="/real-time" element={<RealTime />} />
-                <Route path="/sensor-info" element={<SensorInfo />} />
+            <Route path="/user" element={<User />} />
+            <Route path="/real-time" element={<RealTime />} />
+             <Route path="/history" element={<History />} />
+            <Route path="/sensor-info" element={<SensorInfo />} />
             {/* add more protected routes here */}
           </Route>
         </Route>

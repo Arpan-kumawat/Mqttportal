@@ -4,16 +4,6 @@ import RealtimeGraph from "../../components/RealtimeGraph";
 import { Select, Option, Checkbox, FormLabel, Stack } from "@mui/joy";
 import { useWebSocket } from "../../hooks/useWebSocket";
 
-const ITEM_HEIGHT = 48;
-const ITEM_PADDING_TOP = 8;
-const MenuProps = {
-  PaperProps: {
-    style: {
-      maxHeight: ITEM_HEIGHT * 4.5 + ITEM_PADDING_TOP,
-      width: 250,
-    },
-  },
-};
 
 export default function Sensor() {
  const { data, isConnected, aiInsights } = useWebSocket();
@@ -128,7 +118,7 @@ export default function Sensor() {
           <div className="text-sm text-gray-500 flex items-center gap-4">
        
 
-            <Stack sx={{ m: 1,mr:0, width: 200 }}>
+            <Stack sx={{ m: 1,mr:0, width: 150 }}>
               <Select
                 multiple
                 size="sm"
