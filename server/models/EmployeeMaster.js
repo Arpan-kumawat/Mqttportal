@@ -8,6 +8,7 @@ const itemSchema = new Schema({
     "emp_name" : { type: String },
     "emp_fnm" : { type: String },
     "emp_lnm" : { type: String },
+    "access":{type: Array},
     "emp_mobile_no":{type: String},
     "emp_email_id":{type: String},
     "emp_fn" : { type: String },

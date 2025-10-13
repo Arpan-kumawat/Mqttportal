@@ -217,7 +217,7 @@ const RealtimeGraph = ({
       case "temperature":
         return "°C";
       case "vibration":
-        return "mm/s";
+        return "mm";
       case "acceleration":
         return "g";
       case "percentage":
@@ -271,7 +271,7 @@ const RealtimeGraph = ({
             fontSize={12}
             label={{
               value: unitLabel,
-              angle: -90,
+             
               position: "insideLeft",
             }}
           />

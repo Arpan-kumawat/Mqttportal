@@ -28,7 +28,7 @@ export default function SensorInfo() {
       <h2 className="text-lg font-semibold text-gray-800 mb-4">{data?.sensor?.list?.length &&  data?.sensor?.list[0]?.gvib?.sensorType}</h2> 
            
       <table className="min-w-full text-sm border-collapse">
-        <thead className="bg-blue-100 text-gray-800">
+        <thead className= "text-gray-100" style={{backgroundColor:"#21409a"}}>
           <tr>
             {[
               "ID",

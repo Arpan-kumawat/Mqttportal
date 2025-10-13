@@ -9,7 +9,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import { Play, Pause } from "lucide-react";
+
 
 const HistoryGraph = ({ title, data, type, selectedAxis = ["all"], selectedSensor = ["all"],  format = "number", }) => {
 
@@ -45,7 +45,7 @@ const HistoryGraph = ({ title, data, type, selectedAxis = ["all"], selectedSenso
         case "temperature":
           return "°C";
         case "vibration":
-          return "mm/s";
+          return "mm";
         case "acceleration":
           return "g";
         case "percentage":
@@ -106,35 +106,43 @@ const HistoryGraph = ({ title, data, type, selectedAxis = ["all"], selectedSenso
 
       </div>
 
-      <div className="h-64">
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={ data}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="time" tickFormatter={formatTime} />
-             <YAxis
-                       stroke="#6b7280"
-                       fontSize={12}
-                       label={{
-                         value: unitLabel,
-                         angle: -90,
-                         position: "insideLeft",
-                       }}
-                     />
-            <Tooltip content={<CustomTooltip />} />
-            <Legend verticalAlign="top" height={36} wrapperStyle={{ fontSize: 12 }} />
-            {displayedKeys.map((key, idx) => (
-              <Line
-                key={key}
-                type="monotone"
-                dataKey={key}
-                stroke={palette[idx % palette.length]}
-                dot={false}
-                connectNulls
-              />
-            ))}
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
+    <div className="h-64 relative">
+  {data?.length ? (
+    <ResponsiveContainer width="100%" height="100%">
+      <LineChart data={data}>
+        <CartesianGrid strokeDasharray="3 3" />
+        <XAxis dataKey="time" tickFormatter={formatTime} />
+        <YAxis
+          stroke="#6b7280"
+          fontSize={12}
+          label={{
+            value: unitLabel,
+            position: "insideLeft",
+          }}
+        />
+        <Tooltip content={<CustomTooltip />} />
+        <Legend verticalAlign="top" height={36} wrapperStyle={{ fontSize: 12 }} />
+
+        {displayedKeys?.map((key, idx) => (
+          <Line
+            key={key}
+            type="monotone"
+            dataKey={key}
+            stroke={palette[idx % palette.length]}
+            dot={false}
+            connectNulls
+          />
+        ))}
+      </LineChart>
+    </ResponsiveContainer>
+  ) : (
+    <div className="absolute inset-0 flex items-center justify-center text-gray-500 text-sm">
+      No Data Available
+    </div>
+  )}
+</div>
+
+     
     </div>
   );
 };

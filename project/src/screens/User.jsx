@@ -1,6 +1,5 @@
 import { useState } from "react";
 import {
-  Card,
   CardContent,
   CardActions,
   Typography,
@@ -14,13 +13,15 @@ import {
   FormLabel,
   Alert,
 } from "@mui/joy";
+import { add_emp } from "../utils/helper";
 
 export default function User() {
   const [formData, setFormData] = useState({
-    email: "",
-    fullName: "",
-    role: "user",
-    status: [],
+    emp_email_id: "",
+    emp_name: "",
+    position: "user",
+    store_id: "100",
+    access: [],
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -36,18 +37,18 @@ export default function User() {
 
   const validateForm = () => {
     const newErrors = {};
-    if (!formData.email) {
-      newErrors.email = "Email is required";
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Enter a valid email address";
+    if (!formData.emp_email_id) {
+      newErrors.emp_email_id = "Email is required";
+    } else if (!/\S+@\S+\.\S+/.test(formData.emp_email_id)) {
+      newErrors.emp_email_id = "Enter a valid email address";
     }
 
-    if (!formData.fullName.trim()) {
-      newErrors.fullName = "Full name is required";
+    if (!formData.emp_name.trim()) {
+      newErrors.emp_name = "Full name is required";
     }
 
-    if (formData.status.length === 0) {
-      newErrors.status = "Select at least one access option";
+    if (formData.access.length === 0) {
+      newErrors.access = "Select at least one access option";
     }
 
     setErrors(newErrors);
@@ -62,14 +63,26 @@ export default function User() {
     setMessage({ type: "", text: "" });
 
     try {
-      await new Promise((r) => setTimeout(r, 1000));
-      setMessage({ type: "success", text: "User created successfully!" });
-      setFormData({
-        email: "",
-        fullName: "",
-        role: "user",
-        status: [],
-      });
+      const res = await add_emp(formData);
+
+      if (!res?.data?.status) {
+        setMessage({
+          type: "danger",
+          text: "Failed to create user",
+        });
+      } else {
+        setMessage({
+          type: "success",
+          text: "User created successfully!",
+        });
+        setFormData({
+          emp_email_id: "",
+          emp_name: "",
+          position: "user",
+          store_id: "100",
+          access: [],
+        });
+      }
     } catch (error) {
       setMessage({
         type: "danger",
@@ -77,9 +90,10 @@ export default function User() {
       });
     } finally {
       setLoading(false);
+      // Automatically hide message after 3 seconds
+      setTimeout(() => setMessage({ type: "", text: "" }), 3000);
     }
   };
-
 
   const accessOptions = [
     "All access",
@@ -91,26 +105,8 @@ export default function User() {
   ];
 
   return (
-    <Card
-      variant="outlined"
-      sx={{
-    
-        mx: "auto",
-      
-        p: 2,
-        borderRadius: "lg",
-        boxShadow: "sm",
-        bgcolor: "background.body",
-      }}
-    >
+    <div className="overflow-x-auto rounded-xl shadow-md border border-gray-200 bg-white p-5">
       <CardContent>
-        <Typography level="h4" fontWeight="lg" mb={1}>
-          Create New User
-        </Typography>
-        <Typography level="body2" mb={2} textColor="text.tertiary">
-          Add a new user to the system with appropriate permissions.
-        </Typography>
-
         {message.text && (
           <Alert
             color={message.type === "success" ? "success" : "danger"}
@@ -123,52 +119,55 @@ export default function User() {
 
         <form onSubmit={handleSubmit}>
           <Stack spacing={2}>
-            <FormControl required error={!!errors.email}>
+            {/* Email */}
+            <FormControl required error={!!errors.emp_email_id}>
               <FormLabel>Email Address</FormLabel>
               <Input
                 fullWidth
                 type="email"
-                name="email"
-                value={formData.email}
+                name="emp_email_id"
+                value={formData.emp_email_id}
                 onChange={(e) =>
-                  handleChange({ name: "email", value: e.target.value })
+                  handleChange({ name: "emp_email_id", value: e.target.value })
                 }
-                placeholder="user@example.com"
+                placeholder="Enter email id"
               />
-              {errors.email && (
+              {errors.emp_email_id && (
                 <Typography level="body3" color="danger">
-                  {errors.email}
+                  {errors.emp_email_id}
                 </Typography>
               )}
             </FormControl>
 
-            <FormControl required error={!!errors.fullName}>
+            {/* Full Name */}
+            <FormControl required error={!!errors.emp_name}>
               <FormLabel>Full Name</FormLabel>
               <Input
                 fullWidth
                 type="text"
-                name="fullName"
-                value={formData.fullName}
+                name="emp_name"
+                value={formData.emp_name}
                 onChange={(e) =>
-                  handleChange({ name: "fullName", value: e.target.value })
+                  handleChange({ name: "emp_name", value: e.target.value })
                 }
-                placeholder="John Doe"
+                placeholder="Enter full name"
               />
-              {errors.fullName && (
+              {errors.emp_name && (
                 <Typography level="body3" color="danger">
-                  {errors.fullName}
+                  {errors.emp_name}
                 </Typography>
               )}
             </FormControl>
 
+            {/* Role */}
             <FormControl required>
               <FormLabel>Role</FormLabel>
               <Select
                 fullWidth
-                name="role"
-                value={formData.role}
-                onChange={(event, newValue) =>
-                  handleChange({ name: "role", value: newValue })
+                name="position"
+                value={formData.position}
+                onChange={(_, newValue) =>
+                  handleChange({ name: "position", value: newValue })
                 }
               >
                 <Option value="user">User</Option>
@@ -178,31 +177,32 @@ export default function User() {
               </Select>
             </FormControl>
 
-            <FormControl error={!!errors.status}>
+            {/* Access */}
+            <Stack spacing={1}>
               <FormLabel>Access</FormLabel>
               <Stack direction="row" spacing={1} flexWrap="wrap" marginTop={2}>
-                {accessOptions.map((status) => (
+                {accessOptions.map((access) => (
                   <Checkbox
-                    key={status}
-                    label={status}
-                    checked={formData.status.includes(status)}
+                    key={access}
+                    label={access}
+                    checked={formData.access.includes(access)}
                     onChange={(e) => {
                       const newStatus = e.target.checked
-                        ? [...formData.status, status]
-                        : formData.status.filter((s) => s !== status);
-                      handleChange({ name: "status", value: newStatus });
+                        ? [...formData.access, access]
+                        : formData.access.filter((s) => s !== access);
+                      handleChange({ name: "access", value: newStatus });
                     }}
                     variant="soft"
                     color="primary"
                   />
                 ))}
               </Stack>
-              {errors.status && (
+              {errors.access && (
                 <Typography level="body3" color="danger">
-                  {errors.status}
+                  {errors.access}
                 </Typography>
               )}
-            </FormControl>
+            </Stack>
           </Stack>
 
           <CardActions
@@ -214,12 +214,11 @@ export default function User() {
               gap: 1,
             }}
           >
-        
             <Button
               fullWidth
               type="submit"
               variant="solid"
-              color="primary"
+              sx={{ backgroundColor: "#21409a" }}
               disabled={loading}
             >
               {loading ? "Creating..." : "Create User"}
@@ -227,6 +226,6 @@ export default function User() {
           </CardActions>
         </form>
       </CardContent>
-    </Card>
+    </div>
   );
 }

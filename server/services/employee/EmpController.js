@@ -28,8 +28,8 @@ class EmpController {
   async saveEmp(req, res) {
     try {
       const body = req.body;
-      const { store_id } = body;
-      if (!store_id) {
+      const { emp_email_id } = body;
+      if (!emp_email_id) {
         throw "Please provide required details";
       }
       const result = await this._EmpService.saveEmp(body);

@@ -1,6 +1,6 @@
 import axios from "axios";
 import { apiPost } from "../api/ServiceManager";
-import { AUTH_USER, HISTORY } from "./constant";
+import { AUTH_USER, CREATE_EMP, HISTORY } from "./constant";
 
 let optionAxios = {
   headers: {
@@ -22,10 +22,10 @@ const auth_user = async (user) => {
     param,
     (resp) => {
       if (resp.status) {
-          localStorage.setItem('user', JSON.stringify(resp.data));
-      return true;
+        localStorage.setItem("user", JSON.stringify(resp.data));
+        return true;
       }
-      return false ;
+      return false;
     },
     (err) => {
       console.log("auth_user API error  :::::::::::: ", err.message);
@@ -40,6 +40,18 @@ const getHistoryData = async (input) => {
     .post(HISTORY, input, optionAxios)
     .then(({ data }) => {
       return data;
+    })
+    .catch((error) => {
+      console.log(error);
+    });
+};
+
+const add_emp = async (input) => {
+  input = { ...input };
+  return await axios
+    .post(CREATE_EMP, input, optionAxios)
+    .then(function (resp) {
+      return resp;
     })
     .catch((error) => {
       console.log(error);
@@ -72,4 +84,11 @@ const getUserPermission = () => {
   return access;
 };
 
-export { auth_user, isLogin, toSnakeCase, getUserPermission ,getHistoryData};
+export {
+  auth_user,
+  isLogin,
+  toSnakeCase,
+  getUserPermission,
+  getHistoryData,
+  add_emp,
+};

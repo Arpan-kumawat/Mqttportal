@@ -115,7 +115,7 @@ const RealtimeChart = ({
             className="text-sm font-semibold"
             style={{ color: payload[0].color }}
           >
-            Usage : {formatValue(payload[0].value)}%
+            Usage : {(payload[0].value)}%
           </p>
           {data.predicted && (
             <p className="text-xs text-purple-600">

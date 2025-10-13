@@ -15,6 +15,7 @@ export default function History() {
   const [toDate, setToDate] = useState(dayjs());
   const [loading, setLoading] = useState(false);
 
+  const [totalSensors, settTotalSensors] = useState([]);
   const [vibrationData, setVibrationData] = useState([]);
   const [accelerationData, setAccelerationData] = useState([]);
   const [temperatureData, setTemperatureData] = useState([]);
@@ -22,14 +23,74 @@ export default function History() {
   const isMounted = useRef(true);
 
   // --- Sensor and Axis Handlers ---
-  const handleChangeSensor = (event, newValue) => {
+  const handleChange = (event, newValue) => {
+    // Ensure newValue is an array for multiple select
     const values = Array.isArray(newValue) ? newValue : [newValue];
-    setSelectedSensor(values.includes("all") || values.length === 0 ? ["all"] : values);
+    const prev = selectedSensor || [];
+
+    // If 'all' is included in the new values
+    if (values.includes("all")) {
+      // If previous selection did NOT include 'all', the user just clicked 'all' -> select only 'all'
+      if (!prev.includes("all")) {
+        setSelectedSensor(["all"]);
+        return;
+      }
+
+      // If previous included 'all' but new values also include other sensors (user clicked an individual sensor while 'all' was selected),
+      // remove 'all' and keep the individual sensors
+      if (values.length > 1) {
+        setSelectedSensor(values.filter((v) => v !== "all"));
+        return;
+      }
+
+      // Fallback: keep only 'all'
+      setSelectedSensor(["all"]);
+      return;
+    }
+
+    // If no 'all' in new selection and user cleared everything, fall back to 'all'
+    if (values.length === 0) {
+      setSelectedSensor(["all"]);
+      return;
+    }
+
+    // Normal case: set the selected sensors (individual sensors selected while 'all' not involved)
+    setSelectedSensor(values);
   };
 
-  const handleChangeAxis = (event, newValue) => {
+ const handleChangeAxis = (event, newValue) => {
+    // Ensure newValue is an array for multiple select
     const values = Array.isArray(newValue) ? newValue : [newValue];
-    setSelectedAxis(values.includes("all") || values.length === 0 ? ["all"] : values);
+    const prev = selectedAxis || [];
+
+    // If 'all' is included in the new values
+    if (values.includes("all")) {
+      // If previous selection did NOT include 'all', the user just clicked 'all' -> select only 'all'
+      if (!prev.includes("all")) {
+        setSelectedAxis(["all"]);
+        return;
+      }
+
+      // If previous included 'all' but new values also include other axes (user clicked an individual axis while 'all' was selected),
+      // remove 'all' and keep the individual axes
+      if (values.length > 1) {
+        setSelectedAxis(values.filter((v) => v !== "all"));
+        return;
+      }
+
+      // Fallback: keep only 'all'
+      setSelectedAxis(["all"]);
+      return;
+    }
+
+    // If no 'all' in new selection and user cleared everything, fall back to 'all'
+    if (values.length === 0) {
+      setSelectedAxis(["all"]);
+      return;
+    }
+
+    // Normal case: set the selected axes (individual axes selected while 'all' not involved)
+    setSelectedAxis(values);
   };
 
   // --- Fetch History Data ---
@@ -49,7 +110,14 @@ export default function History() {
       const accelerationRecords = [];
       const temperatureRecords = [];
 
+      const allSensorIds = [];
+
       rawData.forEach((sensor) => {
+        if (sensor.sensorId != null) {
+          // ✅ only include valid IDs
+          allSensorIds.push(sensor.sensorId);
+        }
+
         sensor.history.forEach((h) => {
           const roundedTime = new Date(h.lastUpdated);
           roundedTime.setMilliseconds(0);
@@ -64,7 +132,13 @@ export default function History() {
           // Acceleration
           if (h.gvib?.accelerationRMS) {
             const { x, y, z } = h.gvib.accelerationRMS;
-            accelerationRecords.push({ time, sensorId: sensor.sensorId, x, y, z });
+            accelerationRecords.push({
+              time,
+              sensorId: sensor.sensorId,
+              x,
+              y,
+              z,
+            });
           }
 
           // Temperature
@@ -74,10 +148,21 @@ export default function History() {
             h.snsInfo?.temperature ??
             h.snsInfo?.temprature;
           if (temp != null) {
-            temperatureRecords.push({ time, sensorId: sensor.sensorId, value: Number(temp) });
+            temperatureRecords.push({
+              time,
+              sensorId: sensor.sensorId,
+              value: Number(temp),
+            });
           }
         });
       });
+
+      // Remove duplicates and nulls
+      const uniqueSensorIds = [
+        ...new Set(allSensorIds.filter((id) => id != null)),
+      ];
+
+      settTotalSensors(uniqueSensorIds);
 
       const prepareChartData = (records, type) => {
         const timestamps = [...new Set(records.map((r) => r.time))].sort(
@@ -115,7 +200,9 @@ export default function History() {
 
       if (isMounted.current) {
         setVibrationData(prepareChartData(vibrationRecords, "vibration"));
-        setAccelerationData(prepareChartData(accelerationRecords, "acceleration"));
+        setAccelerationData(
+          prepareChartData(accelerationRecords, "acceleration")
+        );
         setTemperatureData(prepareChartData(temperatureRecords, "temperature"));
       }
     } catch (err) {
@@ -125,56 +212,123 @@ export default function History() {
     }
   };
 
+
   return (
     <div className="mb-6">
-      <div className="flex flex-wrap items-center gap-4 mb-4">
-        <LocalizationProvider dateAdapter={AdapterDayjs}>
-          <DateTimePicker
-            label="From"
-            value={fromDate}
-            onChange={(val) => setFromDate(val)}
-            slotProps={{ textField: { size: "small", sx: { width: 200 } } }}
-          />
-          <DateTimePicker
-            label="To"
-            value={toDate}
-            onChange={(val) => setToDate(val)}
-            slotProps={{ textField: { size: "small", sx: { width: 200 } } }}
-          />
-        </LocalizationProvider>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-4 text-sm">
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <DateTimePicker
+              label="From"
+              value={fromDate}
+              onChange={(val) => setFromDate(val)}
+              slotProps={{ textField: { size: "small", sx: { width: 200 } } }}
+            />
+            <DateTimePicker
+              label="To"
+              value={toDate}
+              onChange={(val) => setToDate(val)}
+              slotProps={{ textField: { size: "small", sx: { width: 200 } } }}
+            />
+          </LocalizationProvider>
 
-        {/* <Stack sx={{ width: 120 }}>
-          <Select multiple size="sm" value={selectedAxis} onChange={handleChangeAxis}>
-            <Option value="all">
-              <Checkbox checked={selectedAxis.includes("all")} /> All Axis
-            </Option>
-            {["x", "y", "z"].map((axis) => (
-              <Option key={axis} value={axis}>
-                <Checkbox checked={selectedAxis.includes(axis)} /> {axis.toUpperCase()}
+          <Button
+            onClick={handleSubmit}
+            style={{ background: "#21409a" }}
+            size="sm"
+          >
+            {loading ? "Loading..." : "Load Data"}
+          </Button>
+        </div>
+
+        <div className="text-sm text-gray-500 flex items-center gap-4">
+            {totalSensors?.length ? <> 
+          <Stack sx={{ m: 1, mr: 0, width: 150 }}>
+            <Select
+              multiple
+              size="sm"
+              value={selectedSensor}
+              onChange={handleChange}
+            >
+              <Option value="all">
+                <Checkbox
+                  size="sm"
+                  checked={selectedSensor.includes("all")}
+                  sx={{ mr: 1 }}
+                />
+                All Sensors
               </Option>
-            ))}
-          </Select>
-        </Stack> */}
+              {totalSensors?.map((item) => (
+                <Option key={item} value={item}>
+                  <Checkbox
+                    size="sm"
+                    checked={selectedSensor.includes(item)}
+                    sx={{ mr: 1 }}
+                  />
+                  Sensor {item}
+                </Option>
+              ))}
+            </Select>
+          </Stack>
 
-        <Button onClick={handleSubmit} variant="outlined" size="sm" startDecorator={<Play />}>
-          {loading ? "Loading..." : "Load Data"}
-        </Button>
+          <Stack sx={{ m: 1, width: 100 }}>
+            <Select
+              multiple
+              size="sm"
+              value={selectedAxis}
+              onChange={handleChangeAxis}
+            >
+              <Option value="all">
+                <Checkbox
+                  size="sm"
+                  checked={selectedAxis.includes("all")}
+                  sx={{ mr: 1 }}
+                />
+                All Axis
+              </Option>
+              <Option value="x">
+                <Checkbox
+                  size="sm"
+                  checked={selectedAxis.includes("x")}
+                  sx={{ mr: 1 }}
+                />
+                x
+              </Option>
+              <Option value="y">
+                <Checkbox
+                  size="sm"
+                  checked={selectedAxis.includes("y")}
+                  sx={{ mr: 1 }}
+                />
+                y
+              </Option>
+              <Option value="z">
+                <Checkbox
+                  size="sm"
+                  checked={selectedAxis.includes("z")}
+                  sx={{ mr: 1 }}
+                />
+                z
+              </Option>
+            </Select>
+          </Stack>  </> :""}
+        </div>
       </div>
 
       {/* --- Render the 3 Graphs --- */}
-      
+
       <HistoryGraph
         title="Velocity RMS"
         type="vibration"
         data={vibrationData}
-           format="vibration"
+        format="vibration"
         selectedSensor={selectedSensor}
         selectedAxis={selectedAxis}
       />
       <HistoryGraph
         title="Acceleration RMS"
         type="acceleration"
-          format="acceleration"
+        format="acceleration"
         data={accelerationData}
         selectedSensor={selectedSensor}
         selectedAxis={selectedAxis}
@@ -182,7 +336,7 @@ export default function History() {
       <HistoryGraph
         title="Temperature"
         type="temperature"
-          format="temperature"
+        format="temperature"
         data={temperatureData}
         selectedSensor={selectedSensor}
         selectedAxis={selectedAxis}
