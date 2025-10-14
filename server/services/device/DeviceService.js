@@ -1,3 +1,4 @@
+// DeviceService.js wrapper import (unchanged)
 const DeviceDataService = require("./DeviceDataService");
 const dotenv = require("dotenv");
 const mqtt = require("mqtt");
@@ -35,9 +36,7 @@ if (INFLUX_ENABLED) {
         influxWriteApi
           .close()
           .then(() => console.log("InfluxDB write API closed"))
-          .catch((err) =>
-            console.error("Error closing InfluxDB write API", err)
-          );
+          .catch((err) => console.error("Error closing InfluxDB write API", err));
       };
       process.on("SIGINT", closeInflux);
       process.on("SIGTERM", closeInflux);
@@ -58,7 +57,8 @@ if (INFLUX_ENABLED) {
 // -----------------------------------------------------------------------------
 // ⚙️ MQTT Setup
 // -----------------------------------------------------------------------------
-let mqttData = {};
+let mqttData = {}; // sensors keyed by numeric sensorId or "unknown"
+const gatewayInfoArray = []; // unique array of gateway GW_info objects
 const clients = [];
 
 const options = {
@@ -83,7 +83,8 @@ mqttClient.on("connect", () => {
 // ⚙️ Parsing Helpers
 // -----------------------------------------------------------------------------
 function parseGvibData(buf) {
-  if (buf.length !== 19) throw new Error("Invalid buffer length, expected 19 bytes");
+  if (!Buffer.isBuffer(buf) || buf.length !== 19)
+    throw new Error("Invalid buffer length, expected 19 bytes");
 
   const sensorTypes = {
     0x00: "SVT200-T temperature sensor",
@@ -97,8 +98,8 @@ function parseGvibData(buf) {
     0x30: "SVT400-A vibration sensor acceleration",
   };
 
-  const scaleV = process.env.SCALE_V;
-  const scaleG = process.env.SCALE_G;
+  const scaleV = parseFloat(process.env.SCALE_V) || 1;
+  const scaleG = parseFloat(process.env.SCALE_G) || 1;
 
   const sensorTypeCode = buf.readUInt8(0);
   const sensorType = sensorTypes[sensorTypeCode] || "Unknown";
@@ -176,103 +177,166 @@ function parseSnsInfo(buffer) {
   };
 }
 
-function formatMqttData(mqttDataLocal) {
-  const array = [];
+function formatMqttData(mqttDataLocal, gatewayInfoArr) {
+  const sensors = [];
   let unknown = null;
-  let gateway = null;
   let system_active = false;
 
   Object.values(mqttDataLocal).forEach((sensor) => {
-    if (sensor.sensorId === "unknown") unknown = sensor;
-    else if (sensor.sensorId === "gateway") {
-      gateway = sensor;
-      system_active = true;
-    } else array.push(sensor);
+    if (sensor.sensorId === "unknown") {
+      unknown = sensor;
+    } else {
+      sensors.push(sensor);
+    }
   });
 
-  array.sort((a, b) => a.sensorId - b.sensorId);
+  sensors.sort((a, b) => a.sensorId - b.sensorId);
 
-  return { array, unknown, gateway, system_active };
+  if ((gatewayInfoArr && gatewayInfoArr.length > 0) || sensors.length > 0) {
+    system_active = true;
+  }
+
+  return {
+    sensors,
+    unknown,
+    gateways: gatewayInfoArr || [],
+    system_active,
+  };
 }
 
 // -----------------------------------------------------------------------------
-// ⚙️ MQTT Message Handler
+// ⚙️ MQTT Message Handler (single clean handler)
 // -----------------------------------------------------------------------------
 mqttClient.on("message", (topic, message) => {
   try {
-    let parsedData;
-    let sensorId;
+    let parsedData = null;
+    let sensorId = null;
+    let gateway = "unknown";
 
+    // Detect gateway from topic (robust contains check)
+    if (topic.includes("/GAZ/") || topic.includes("GAZ/")) gateway = "GAZ";
+    else if (topic.includes("/GW028/") || topic.includes("GW028/")) gateway = "GW028";
+
+    // GW_info messages are gateway-level and handled separately
     if (topic.endsWith("GW_info")) {
-      parsedData = JSON.parse(message.toString());
-      sensorId = parsedData?.sensorId || "gateway";
-    } else if (topic.endsWith("gvib")) {
-      parsedData = parseGvibData(message);
-      sensorId = parsedData.sensorId;
-    } else if (topic.endsWith("sns_info")) {
-      parsedData = parseSnsInfo(message);
-      sensorId = parsedData.sensorId;
-    } else {
-      parsedData = message.toString();
-      sensorId = "unknown";
-    }
-
-    if (!sensorId) sensorId = "unknown";
-
-    if (!mqttData[sensorId]) mqttData[sensorId] = { sensorId };
-
-    if (topic.endsWith("GW_info")) mqttData[sensorId].gw_info = parsedData;
-    else if (topic.endsWith("gvib")) mqttData[sensorId].gvib = parsedData;
-    else if (topic.endsWith("sns_info")) mqttData[sensorId].sns_info = parsedData;
-    else mqttData[sensorId].raw = parsedData;
-
-    mqttData[sensorId].lastUpdated = new Date().toISOString();
-
-    // ✅ Write to InfluxDB
-    if (INFLUX_ENABLED && influxWriteApi && parsedData) {
       try {
-        const point = new Point("sensor_data")
-          .tag("topic", topic)
-          .tag("sensorId", sensorId.toString());
+        parsedData = JSON.parse(message.toString());
+      } catch (e) {
+        console.error("Failed to parse GW_info JSON:", e.message);
+        parsedData = null;
+      }
 
-        if (parsedData.sensorType)
-          point.tag("sensorType", parsedData.sensorType);
-        if (parsedData.groupNumber !== undefined)
-          point.tag("group", parsedData.groupNumber.toString());
+      const gwEntry = {
+        gateway,
+        gw_info: parsedData,
+        lastUpdated: new Date().toISOString(),
+      };
 
-        if (topic.endsWith("gvib")) {
-          const { vibrationVelocity, accelerationRMS } = parsedData;
-          point
-            .floatField("velox", vibrationVelocity?.x || 0)
-            .floatField("veloy", vibrationVelocity?.y || 0)
-            .floatField("veloz", vibrationVelocity?.z || 0)
-            .floatField("grmsx", accelerationRMS?.x   || 0)
-            .floatField("grmsy", accelerationRMS?.y || 0)
-            .floatField("grmsz", accelerationRMS?.z || 0);
-        } else if (topic.endsWith("sns_info")) {
-          point
-            .floatField("temperature", parsedData.temperature)
-            .floatField("batteryVoltage", parsedData.batteryVoltage)
-            .intField("rssi", parsedData.rssi)
-            .floatField("version", parsedData.version);
-        } else if (topic.endsWith("GW_info")) {
+      const existingIndex = gatewayInfoArray.findIndex((item) => item.gateway === gateway);
+      if (existingIndex !== -1) {
+        gatewayInfoArray[existingIndex] = gwEntry;
+      } else {
+        gatewayInfoArray.push(gwEntry);
+      }
+
+      // Write GW_info numeric fields to Influx (if available)
+      if (INFLUX_ENABLED && influxWriteApi && parsedData) {
+        try {
+          const point = new Point("sensor_data").tag("topic", topic).tag("gateway", gateway);
           Object.entries(parsedData).forEach(([k, v]) => {
             if (typeof v === "number") point.floatField(k, v);
           });
+          point.timestamp(new Date());
+          influxWriteApi.writePoint(point);
+        } catch (err) {
+          console.error("Error writing GW_info to InfluxDB:", err.message);
         }
+      }
+    } else {
+      // Non-GW_info messages: gvib, sns_info, others
+      if (topic.endsWith("gvib")) {
+        try {
+          parsedData = parseGvibData(message);
+        } catch (err) {
+          // If parse fails, store raw
+          console.error("parseGvibData error:", err.message);
+          parsedData = null;
+        }
+        sensorId = parsedData?.sensorId;
+      } else if (topic.endsWith("sns_info")) {
+        try {
+          parsedData = parseSnsInfo(message);
+        } catch (err) {
+          console.error("parseSnsInfo error:", err.message);
+          parsedData = null;
+        }
+        sensorId = parsedData?.sensorId;
+      } else {
+        parsedData = message.toString();
+        sensorId = "unknown";
+      }
 
-        point.timestamp(new Date());
-        influxWriteApi.writePoint(point);
-      } catch (err) {
-        console.error("Error writing to InfluxDB:", err.message);
+      // Normalize sensorId to numeric string if possible
+      if (typeof sensorId === "string") {
+        const m = sensorId.match(/\d+$/);
+        if (m) sensorId = m[0];
+      }
+
+      if (!sensorId) sensorId = "unknown";
+
+      if (!mqttData[sensorId]) mqttData[sensorId] = { sensorId, gateway };
+
+      if (topic.endsWith("gvib")) mqttData[sensorId].gvib = parsedData;
+      else if (topic.endsWith("sns_info")) mqttData[sensorId].sns_info = parsedData;
+      else mqttData[sensorId].raw = parsedData;
+
+      mqttData[sensorId].gateway = gateway;
+      mqttData[sensorId].lastUpdated = new Date().toISOString();
+
+      // Influx for sensor messages
+      if (INFLUX_ENABLED && influxWriteApi && parsedData) {
+        try {
+          const point = new Point("sensor_data")
+            .tag("topic", topic)
+            .tag("gateway", gateway);
+
+          if (sensorId !== "unknown") point.tag("sensorId", sensorId.toString());
+          if (parsedData.sensorType) point.tag("sensorType", parsedData.sensorType);
+          if (parsedData.groupNumber !== undefined)
+            point.tag("group", parsedData.groupNumber.toString());
+
+          if (topic.endsWith("gvib")) {
+            const { vibrationVelocity, accelerationRMS } = parsedData;
+            point
+              .floatField("velox", vibrationVelocity?.x || 0)
+              .floatField("veloy", vibrationVelocity?.y || 0)
+              .floatField("veloz", vibrationVelocity?.z || 0)
+              .floatField("grmsx", accelerationRMS?.x || 0)
+              .floatField("grmsy", accelerationRMS?.y || 0)
+              .floatField("grmsz", accelerationRMS?.z || 0);
+          } else if (topic.endsWith("sns_info")) {
+            point
+              .floatField("temperature", parsedData.temperature || 0)
+              .floatField("batteryVoltage", parsedData.batteryVoltage || 0)
+              .intField("rssi", parsedData.rssi || 0)
+              .floatField("version", parsedData.version || 0);
+          }
+
+          point.timestamp(new Date());
+          influxWriteApi.writePoint(point);
+        } catch (err) {
+          console.error("Error writing sensor data to InfluxDB:", err.message);
+        }
       }
     }
 
-    // Broadcast to connected WebSocket clients
-    const newMessage = JSON.stringify({
+    // Broadcast updated data to WebSocket clients
+    const payload = {
       type: "update",
-      data: formatMqttData(mqttData),
-    });
+      data: formatMqttData(mqttData, gatewayInfoArray),
+    };
+
+    const newMessage = JSON.stringify(payload);
     clients.forEach((client) => {
       if (client.readyState === WebSocket.OPEN) client.send(newMessage);
     });
@@ -290,17 +354,14 @@ class DeviceService {
   }
 
   async GetData() {
-    return formatMqttData(mqttData);
+    return formatMqttData(mqttData, gatewayInfoArray);
   }
 
-      async GetHistoryData(body){
-       const result = await this._DeviceDataService.GetHistoryData(body); 
-       return result;        
-    }
-
+  async GetHistoryData(body) {
+    const result = await this._DeviceDataService.GetHistoryData(body);
+    return result;
+  }
 }
-
-
 
 function addClient(ws) {
   if (!clients.includes(ws)) clients.push(ws);
@@ -310,13 +371,12 @@ function removeClient(ws) {
   if (idx > -1) clients.splice(idx, 1);
 }
 function getFormattedData() {
-  return formatMqttData(mqttData);
+  return formatMqttData(mqttData, gatewayInfoArray);
 }
 
 // -----------------------------------------------------------------------------
 // ⚙️ Query Helper
 // -----------------------------------------------------------------------------
-
 async function querySensorData(sensorId, start = "-1h", end = "now()") {
   if (!INFLUX_ENABLED) throw new Error("InfluxDB not enabled");
 
@@ -351,7 +411,6 @@ async function querySensorData(sensorId, start = "-1h", end = "now()") {
   });
   return rows;
 }
-
 
 // -----------------------------------------------------------------------------
 // 📦 Exports

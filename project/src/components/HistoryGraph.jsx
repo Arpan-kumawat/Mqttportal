@@ -10,9 +10,14 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-
-const HistoryGraph = ({ title, data, type, selectedAxis = ["all"], selectedSensor = ["all"],  format = "number", }) => {
-
+const HistoryGraph = ({
+  title,
+  data,
+  type,
+  selectedAxis = ["all"],
+  selectedSensor = ["all"],
+  format = "number",
+}) => {
   // Determine which keys to display based on selected sensors & axes
   const displayedKeys = useMemo(() => {
     if (!data.length) return [];
@@ -35,27 +40,34 @@ const HistoryGraph = ({ title, data, type, selectedAxis = ["all"], selectedSenso
   }, [data, selectedSensor, selectedAxis, type]);
 
   const palette = [
-    "#3b82f6", "#ef4444", "#10b981", "#f59e0b",
-    "#8b5cf6", "#06b6d4", "#ec4899", "#6366f1",
-    "#f97316", "#14b8a6",
+    "#3b82f6",
+    "#ef4444",
+    "#10b981",
+    "#f59e0b",
+    "#8b5cf6",
+    "#06b6d4",
+    "#ec4899",
+    "#6366f1",
+    "#f97316",
+    "#14b8a6",
   ];
 
-    const unitLabel = useMemo(() => {
-      switch (format) {
-        case "temperature":
-          return "°C";
-        case "vibration":
-          return "mm";
-        case "acceleration":
-          return "g";
-        case "percentage":
-          return "%";
-        default:
-          return "";
-      }
-    }, [format]);
+  const unitLabel = useMemo(() => {
+    switch (format) {
+      case "temperature":
+        return "°C";
+      case "vibration":
+        return "mm";
+      case "acceleration":
+        return "g";
+      case "percentage":
+        return "%";
+      default:
+        return "";
+    }
+  }, [format]);
 
-      const formatValue = (value) => {
+  const formatValue = (value) => {
     if (value === null || value === undefined) return "-";
     switch (format) {
       case "currency":
@@ -87,10 +99,10 @@ const HistoryGraph = ({ title, data, type, selectedAxis = ["all"], selectedSenso
                 style={{ background: p.color }}
               />
               {/* <span className="text-sm">{p.name}: {p.value ?? "-"}</span> */}
-               <span className="text-sm font-medium">{p.name}:</span>
-                <span className="text-sm text-gray-700">
-                  {p.value == null ? "-" : formatValue(p.value)}
-                </span>
+              <span className="text-sm font-medium">{p.name}:</span>
+              <span className="text-sm text-gray-700">
+                {p.value == null ? "-" : formatValue(p.value)}
+              </span>
             </div>
           ))}
         </div>
@@ -103,46 +115,47 @@ const HistoryGraph = ({ title, data, type, selectedAxis = ["all"], selectedSenso
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6 hover:shadow-md transition-shadow">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
-
       </div>
 
-    <div className="h-64 relative">
-  {data?.length ? (
-    <ResponsiveContainer width="100%" height="100%">
-      <LineChart data={data}>
-        <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="time" tickFormatter={formatTime} />
-        <YAxis
-          stroke="#6b7280"
-          fontSize={12}
-          label={{
-            value: unitLabel,
-            position: "insideLeft",
-          }}
-        />
-        <Tooltip content={<CustomTooltip />} />
-        <Legend verticalAlign="top" height={36} wrapperStyle={{ fontSize: 12 }} />
+      <div className="h-64 relative">
+        {data?.length ? (
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={data}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="time" tickFormatter={formatTime} />
+              <YAxis
+                stroke="#6b7280"
+                fontSize={12}
+                label={{
+                  value: unitLabel,
+                  position: "insideLeft",
+                }}
+              />
+              <Tooltip content={<CustomTooltip />} />
+              <Legend
+                verticalAlign="top"
+                height={36}
+                wrapperStyle={{ fontSize: 12 }}
+              />
 
-        {displayedKeys?.map((key, idx) => (
-          <Line
-            key={key}
-            type="monotone"
-            dataKey={key}
-            stroke={palette[idx % palette.length]}
-            dot={false}
-            connectNulls
-          />
-        ))}
-      </LineChart>
-    </ResponsiveContainer>
-  ) : (
-    <div className="absolute inset-0 flex items-center justify-center text-gray-500 text-sm">
-      No Data Available
-    </div>
-  )}
-</div>
-
-     
+              {displayedKeys?.map((key, idx) => (
+                <Line
+                  key={key}
+                  type="monotone"
+                  dataKey={key}
+                  stroke={palette[idx % palette.length]}
+                  dot={false}
+                  connectNulls
+                />
+              ))}
+            </LineChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center text-gray-500 text-sm">
+            No Data Available
+          </div>
+        )}
+      </div>
     </div>
   );
 };

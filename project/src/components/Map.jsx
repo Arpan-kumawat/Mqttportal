@@ -18,13 +18,13 @@ const MyMap = ({ data }) => {
     // { id: 1, name: "New Delhi", lat: 28.6139, lng: 77.2090 },
     {
       id: 1,
-      name: data?.gateway?.name || "",
-      lat: data?.gateway?.latitude || 10,
-      lng: data?.gateway?.longitude || 10,
+      name: data?.gw_info?.name || "",
+      lat: data?.gw_info?.latitude || 10,
+      lng: data?.gw_info?.longitude || 10,
     },
   ];
 
-  const center = [data?.gateway?.latitude, data?.gateway?.longitude]; // Central location(so all markers are visible)
+  const center = [data?.gw_info?.latitude, data?.gw_info?.longitude]; // Central location(so all markers are visible)
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
@@ -46,11 +46,11 @@ const MyMap = ({ data }) => {
         </div> */}
       </div>
 
-      {data?.gateway?.latitude ? ( 
+      {data?.gw_info?.latitude ? (
         <div style={{ height: "35vh", width: "100%" }}>
           <MapContainer
             center={center}
-            zoom={8}
+            zoom={1}
             style={{ height: "100%", width: "100%" }}
             zoomControl={false}
           >
@@ -72,8 +72,7 @@ const MyMap = ({ data }) => {
         </div>
       ) : (
         <div className="flex items-center justify-center h-36">
-
-        <CircularProgress variant="soft" />
+          <CircularProgress variant="soft" />
         </div>
       )}
     </div>

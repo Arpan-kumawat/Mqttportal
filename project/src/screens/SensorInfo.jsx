@@ -23,9 +23,16 @@ export default function SensorInfo() {
     return "text-red-600 font-medium";
   };
 
+    let selectedGatwat = localStorage.getItem("GateWay");
+
+  let filterSensor = data?.sensor?.list?.filter(
+    (e) => e?.gateway == selectedGatwat
+  );
+
+
   return (
     <div className="overflow-x-auto rounded-xl shadow-md border border-gray-200 bg-white p-5">
-      <h2 className="text-lg font-semibold text-gray-800 mb-4">{data?.sensor?.list?.length &&  data?.sensor?.list[0]?.gvib?.sensorType}</h2> 
+      <h2 className="text-lg font-semibold text-gray-800 mb-4">{filterSensor?.length &&  filterSensor[0]?.gvib?.sensorType}</h2> 
            
       <table className="min-w-full text-sm border-collapse">
         <thead className= "text-gray-100" style={{backgroundColor:"#21409a"}}>
@@ -51,14 +58,14 @@ export default function SensorInfo() {
           </tr>
         </thead>
         <tbody>
-          {data?.sensor?.list?.length === 0 ? (
+          {filterSensor?.length === 0 ? (
             <tr>
               <td colSpan={9} className="px-4 py-3 text-center text-gray-500">
                 No data available
               </td>
             </tr>
           ) : (
-            data?.sensor?.list?.map((obj, idx) => {
+            filterSensor?.map((obj, idx) => {
               const battery = obj.sns_info?.batteryVoltage ?? obj.batt ?? null;
               const passTime = obj.lastUpdated ?? obj.updatedAt ?? null;
 

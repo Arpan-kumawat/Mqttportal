@@ -115,6 +115,7 @@ export default function History() {
       rawData.forEach((sensor) => {
         if (sensor.sensorId != null) {
           // ✅ only include valid IDs
+      
           allSensorIds.push(sensor.sensorId);
         }
 
@@ -162,6 +163,7 @@ export default function History() {
         ...new Set(allSensorIds.filter((id) => id != null)),
       ];
 
+      
       settTotalSensors(uniqueSensorIds);
 
       const prepareChartData = (records, type) => {

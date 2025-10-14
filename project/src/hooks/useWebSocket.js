@@ -116,57 +116,49 @@ export const useWebSocket = () => {
           // many updates come as { type: 'update', data: { ... } }
           // handle common shapes below; individual topics will be processed later
           payload = msg.data;
-          timestamp = msg.data.timestamp || msg.data.gateway?.lastUpdated || Date.now();
+          timestamp = msg.data.timestamp ||  Date.now();
         }
 
+       
         
         // If payload contains a gateway object with gw_info, map its fields
-        if (payload && payload.gateway && payload.gateway.gw_info) {
-          const gw = payload.gateway.gw_info;
-          const gwTs = payload.gateway.lastUpdated ? Date.parse(payload.gateway.lastUpdated) : Date.now();
-          const sns = payload.array;
+     if (payload && Array.isArray(payload.gateways)) {
+  const gateways = payload.gateways; // Array of gateway objects
+  const sensors = payload.sensors || [];
+  const gwTs = Date.now();
 
-          setData(prev => {
-            const next = { ...prev };
+  setData(prev => {
+    const next = { ...prev };
 
-            // store the raw gw object for convenience
-            next.gateway = { ...next.gateway, ...gw, lastUpdated: payload.gateway.lastUpdated || gwTs };
-            next.sensor = { ...next.sensor, list: [...sns] };
+    // ✅ Store all gateways in one list
+    next.gateway = {
+      ...next.gateway,
+      list: [...gateways], // replace or merge if you want cumulative
+      lastUpdated: gwTs,
+    };
 
-            // Flatten numeric gw_info fields into small time-series so UI MetricCard + charts can use them
-            const numericFields = ['temperature', 'drv_tot', 'drv_usd', 'overall', 'free', 'active'];
+    // ✅ Store all sensors as before
+    next.sensor = {
+      ...next.sensor,
+      list: [...sensors],
+    };
 
-            numericFields.forEach((field) => {
-              const key = `gateway.${field}`;
-              const val = gw[field];
-              if (val === undefined || val === null) return;
 
-              const existing = Array.isArray(prev[key]) ? prev[key] : [];
-              const newPoint = {
-                timestamp: gwTs,
-                value: typeof val === 'number' ? val : Number(val) || 0,
-                label: `${key} ${gwTs}`,
-                predicted: false,
-                anomaly: false
-              };
+    return next;
+  });
 
-              // keep same length as before when possible
-              next[key] = [...existing.slice(1), newPoint];
-            });
+  setIsSystemActive(payload?.system_active ?? false);
 
-            return next;
-          });
+  // Small AI insights update for gateway metrics
+  setAiInsights(prev => ({
+    ...prev,
+    trends: 'unknown',
+  }));
 
-          setIsSystemActive(msg.data?.system_active);
-          // small AI insights update for gateway
-          setAiInsights(prev => ({
-            ...prev,
-            trends: { ...prev.trends, gateway: (payload.gateway.gw_info.temperature ?? 0) > 0 ? 'stable' : 'unknown' }
-          }));
+  // stop here, since this was a gateway update
+  return;
+}
 
-          // we've handled the gateway update
-          return;
-        }
 
         if (payload === undefined) return;
 

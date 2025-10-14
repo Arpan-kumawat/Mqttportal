@@ -11,6 +11,7 @@ import {
   ReferenceLine,
 } from "recharts";
 import { Play ,Pause } from 'lucide-react';
+import { set } from "date-fns";
 
 const RealtimeGraph = ({
   title,
@@ -28,6 +29,33 @@ const RealtimeGraph = ({
   const [isPaused, setIsPaused] = useState(false); // 👈 new state
   const isMounted = useRef(true);
   const updateTimeout = useRef(null);
+// --- Baseline drag state ---
+const [baselineY, setBaselineY] = useState(1);
+const [dragging, setDragging] = useState(false);
+const chartRef = useRef(null);
+
+const handleMouseDown = (e) => {
+  setDragging(true);
+};
+
+const handleMouseUp = () => {
+  setDragging(false);
+};
+
+const handleMouseMove = (e) => {
+  if (!dragging || !chartRef.current) return;
+
+  const chartRect = chartRef.current.getBoundingClientRect();
+  const chartHeight = chartRect.height;
+  const offsetY = e.clientY - chartRect.top;
+
+  // Convert mouse Y position to approximate chart Y value
+  // You can adjust scaling as needed
+  const yPercent = 1 - offsetY / chartHeight;
+  const newBaseline = yPercent * 10; // Scale (depends on your data range)
+  setBaselineY(newBaseline);
+};
+
 
   // cleanup on unmount
   useEffect(() => {
@@ -71,7 +99,7 @@ const RealtimeGraph = ({
   const sensorsList = useMemo(() => {
     if (Array.isArray(sensors) && sensors.length) return sensors;
     if (Array.isArray(data) && data.length) return data;
-    if (data?.list && Array.isArray(data.list)) return data.list;
+    if (data && Array.isArray(data)) return data;
     if (data) return [data];
     return [];
   }, [sensors, data]);
@@ -199,6 +227,12 @@ const RealtimeGraph = ({
     return keys.sort();
   }, [combinedData, selectedSensor, selectedAxis, type]);
 
+
+  useEffect(() => {
+   setBaselineY(0);
+  }, [selectedSensor])
+  
+
   const palette = [
     "#3b82f6",
     "#ef4444",
@@ -256,45 +290,73 @@ const RealtimeGraph = ({
     return null;
   };
 
+
+  
   // memoize the chart to avoid rerender spikes
   const chartContent = useMemo(
     () => (
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart
-          data={combinedData}
-          margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-        >
-          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-          <XAxis dataKey="timestamp" tickFormatter={formatTime} stroke="#6b7280" fontSize={12} />
-          <YAxis
-            stroke="#6b7280"
-            fontSize={12}
-            label={{
-              value: unitLabel,
-             
-              position: "insideLeft",
-            }}
-          />
-          <Tooltip content={<CustomTooltip />} />
-          <Legend verticalAlign="top" height={36} wrapperStyle={{ fontSize: 12 }} />
-          {anomalyTimestamps.map((t, i) => (
-            <ReferenceLine key={i} x={t} stroke="#f59e0b" strokeDasharray="2 2" />
-          ))}
-          {displayedSeriesKeys.map((key, i) => (
-            <Line
-              key={key}
-              type="monotone"
-              dataKey={key}
-              name={key}
-              stroke={palette[i % palette.length]}
-              strokeWidth={2}
-              dot={false}
-              isAnimationActive={false}
-              connectNulls
-            />
-          ))}
-        </LineChart>
-      </ResponsiveContainer>
+    <div
+  ref={chartRef}
+  onMouseMove={handleMouseMove}
+  onMouseUp={handleMouseUp}
+  onMouseLeave={handleMouseUp}
+  style={{ height: "16rem", position: "relative" }}
+>
+  <ResponsiveContainer width="100%" height="100%">
+    <LineChart
+      data={combinedData}
+    
+      margin={{ top: 5, right: 80, left: 20, bottom: 5 }} 
+      onMouseDown={handleMouseDown} // Start dragging inside chart
+    >
+      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+      <XAxis dataKey="timestamp" tickFormatter={formatTime} stroke="#6b7280" fontSize={12} />
+      <YAxis
+        stroke="#6b7280"
+        fontSize={12}
+        label={{
+          value: unitLabel,
+          position: "insideLeft",
+        }}
+      />
+      {!dragging && <Tooltip content={<CustomTooltip />} />}
+      <Legend verticalAlign="top" height={36} wrapperStyle={{ fontSize: 10 }} />
+
+      {anomalyTimestamps.map((t, i) => (
+        <ReferenceLine key={i} x={t} stroke="#f59e0b" strokeDasharray="2 2" />
+      ))}
+
+      {/* ✅ Draggable Baseline */}
+      <ReferenceLine
+        y={baselineY}
+        stroke="red"
+        strokeWidth={3}
+        ifOverflow="visible"
+        strokeDasharray="4 4"
+        label={{
+          value: `Baseline: ${baselineY.toFixed(2)}`,
+          position: "right",
+        }}
+        cursor="row-resize"
+      />
+
+      {displayedSeriesKeys.map((key, i) => (
+        <Line
+          key={key}
+          type="monotone"
+          dataKey={key}
+          name={key}
+          stroke={palette[i % palette.length]}
+          strokeWidth={1}
+          dot={false}
+          isAnimationActive={false}
+          connectNulls
+        />
+      ))}
+    </LineChart>
+  </ResponsiveContainer>
+</div>
+
     ),
     [combinedData, displayedSeriesKeys, anomalies, unitLabel]
   );

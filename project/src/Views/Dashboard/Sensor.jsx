@@ -4,9 +4,8 @@ import RealtimeGraph from "../../components/RealtimeGraph";
 import { Select, Option, Checkbox, FormLabel, Stack } from "@mui/joy";
 import { useWebSocket } from "../../hooks/useWebSocket";
 
-
 export default function Sensor() {
- const { data, isConnected, aiInsights } = useWebSocket();
+  const { data, isConnected, aiInsights } = useWebSocket();
 
   const getAnomalies = (type) => {
     const series = data[type] || [];
@@ -14,6 +13,12 @@ export default function Sensor() {
       series.some((point) => point.timestamp === anomaly.timestamp)
     );
   };
+
+  let selectedGatwat = localStorage.getItem("GateWay");
+
+  let filterSensor = data?.sensor?.list?.filter(
+    (e) => e?.gateway == selectedGatwat
+  );
 
   const [selectedSensor, setSelectedSensor] = useState(["all"]);
   const [selectedAxis, setSelectedAxis] = useState(["all"]);
@@ -35,6 +40,7 @@ export default function Sensor() {
     orange: "bg-orange-500",
     red: "bg-red-500",
   };
+
 
   const handleChange = (event, newValue) => {
     // Ensure newValue is an array for multiple select
@@ -71,7 +77,7 @@ export default function Sensor() {
     setSelectedSensor(values);
   };
 
- const handleChangeAxis = (event, newValue) => {
+  const handleChangeAxis = (event, newValue) => {
     // Ensure newValue is an array for multiple select
     const values = Array.isArray(newValue) ? newValue : [newValue];
     const prev = selectedAxis || [];
@@ -112,13 +118,11 @@ export default function Sensor() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4 text-sm">
             <h3 className="text-lg font-semibold text-gray-900">
-              {data.sensor?.list &&  data.sensor?.list[0]?.gvib?.sensorType}
+              {data.sensor?.list && data.sensor?.list[0]?.gvib?.sensorType}
             </h3>
           </div>
           <div className="text-sm text-gray-500 flex items-center gap-4">
-       
-
-            <Stack sx={{ m: 1,mr:0, width: 150 }}>
+            <Stack sx={{ m: 1, mr: 0, width: 150 }}>
               <Select
                 multiple
                 size="sm"
@@ -133,7 +137,7 @@ export default function Sensor() {
                   />
                   All Sensors
                 </Option>
-                {data?.sensor?.list?.map((item) => (
+                {filterSensor?.map((item) => (
                   <Option key={item?.sensorId} value={item?.sensorId}>
                     <Checkbox
                       size="sm"
@@ -146,49 +150,47 @@ export default function Sensor() {
               </Select>
             </Stack>
 
-
-             <Stack sx={{ m: 1, width: 100 }}>
+            <Stack sx={{ m: 1, width: 100 }}>
               <Select
                 multiple
                 size="sm"
                 value={selectedAxis}
                 onChange={handleChangeAxis}
               >
-      
-
-<Option value="all">
-   <Checkbox
+                <Option value="all">
+                  <Checkbox
                     size="sm"
                     checked={selectedAxis.includes("all")}
                     sx={{ mr: 1 }}
                   />
-                  All Axis </Option>
-              <Option value="x"> 
-                 <Checkbox
+                  All Axis{" "}
+                </Option>
+                <Option value="x">
+                  <Checkbox
                     size="sm"
                     checked={selectedAxis.includes("x")}
                     sx={{ mr: 1 }}
                   />
-                x</Option>
-              <Option value="y">
+                  x
+                </Option>
+                <Option value="y">
                   <Checkbox
                     size="sm"
                     checked={selectedAxis.includes("y")}
                     sx={{ mr: 1 }}
                   />
-                y</Option>
-              <Option value="z">
-                   <Checkbox
+                  y
+                </Option>
+                <Option value="z">
+                  <Checkbox
                     size="sm"
                     checked={selectedAxis.includes("z")}
                     sx={{ mr: 1 }}
                   />
-                z</Option>
-
-
+                  z
+                </Option>
               </Select>
             </Stack>
-
           </div>
         </div>
       </div>
@@ -197,7 +199,7 @@ export default function Sensor() {
         <div className="w-full lg:w-3/4 pr-2">
           <div className="mb-4">
             <RealtimeGraph
-              data={data.sensor}
+              data={filterSensor}
               selectedSensor={selectedSensor}
               selectedAxis={selectedAxis}
               title="Velocity RMS (mm/s)"
@@ -209,7 +211,7 @@ export default function Sensor() {
           </div>
           <div className="mb-4">
             <RealtimeGraph
-              data={data.sensor}
+              data={filterSensor}
               selectedSensor={selectedSensor}
               selectedAxis={selectedAxis}
               title="Acceleration RMS (g)"
@@ -220,7 +222,7 @@ export default function Sensor() {
             />
           </div>
           <RealtimeGraph
-            data={data.sensor}
+            data={filterSensor}
             selectedSensor={selectedSensor}
             title="Temperature (°C)"
             color="#f59e0b"
