@@ -22,6 +22,8 @@ export default function History() {
 
   const isMounted = useRef(true);
 
+  let selectedGatwat = localStorage.getItem("GateWay");
+
   // --- Sensor and Axis Handlers ---
   const handleChange = (event, newValue) => {
     // Ensure newValue is an array for multiple select
@@ -58,7 +60,7 @@ export default function History() {
     setSelectedSensor(values);
   };
 
- const handleChangeAxis = (event, newValue) => {
+  const handleChangeAxis = (event, newValue) => {
     // Ensure newValue is an array for multiple select
     const values = Array.isArray(newValue) ? newValue : [newValue];
     const prev = selectedAxis || [];
@@ -115,10 +117,18 @@ export default function History() {
       rawData.forEach((sensor) => {
         if (sensor.sensorId != null) {
           // ✅ only include valid IDs
-      
-          allSensorIds.push(sensor.sensorId);
+
+          
+
+          if (sensor?.gateway == selectedGatwat) {
+            allSensorIds.push(sensor.sensorId);
+          }
         }
 
+   
+
+
+         if (sensor?.gateway == selectedGatwat) {
         sensor.history.forEach((h) => {
           const roundedTime = new Date(h.lastUpdated);
           roundedTime.setMilliseconds(0);
@@ -156,6 +166,8 @@ export default function History() {
             });
           }
         });
+
+      }
       });
 
       // Remove duplicates and nulls
@@ -163,7 +175,6 @@ export default function History() {
         ...new Set(allSensorIds.filter((id) => id != null)),
       ];
 
-      
       settTotalSensors(uniqueSensorIds);
 
       const prepareChartData = (records, type) => {
@@ -214,7 +225,6 @@ export default function History() {
     }
   };
 
-
   return (
     <div className="mb-6">
       <div className="flex items-center justify-between mb-4">
@@ -244,76 +254,80 @@ export default function History() {
         </div>
 
         <div className="text-sm text-gray-500 flex items-center gap-4">
-            {totalSensors?.length ? <> 
-          <Stack sx={{ m: 1, mr: 0, width: 150 }}>
-            <Select
-              multiple
-              size="sm"
-              value={selectedSensor}
-              onChange={handleChange}
-            >
-              <Option value="all">
-                <Checkbox
+          {totalSensors?.length ? (
+            <>
+              <Stack sx={{ m: 1, mr: 0, width: 150 }}>
+                <Select
+                  multiple
                   size="sm"
-                  checked={selectedSensor.includes("all")}
-                  sx={{ mr: 1 }}
-                />
-                All Sensors
-              </Option>
-              {totalSensors?.map((item) => (
-                <Option key={item} value={item}>
-                  <Checkbox
-                    size="sm"
-                    checked={selectedSensor.includes(item)}
-                    sx={{ mr: 1 }}
-                  />
-                  Sensor {item}
-                </Option>
-              ))}
-            </Select>
-          </Stack>
-
-          <Stack sx={{ m: 1, width: 100 }}>
-            <Select
-              multiple
-              size="sm"
-              value={selectedAxis}
-              onChange={handleChangeAxis}
-            >
-              <Option value="all">
-                <Checkbox
+                  value={selectedSensor}
+                  onChange={handleChange}
+                >
+                  <Option value="all">
+                    <Checkbox
+                      size="sm"
+                      checked={selectedSensor.includes("all")}
+                      sx={{ mr: 1 }}
+                    />
+                    All Sensors
+                  </Option>
+                  {totalSensors?.map((item) => (
+                    <Option key={item} value={item}>
+                      <Checkbox
+                        size="sm"
+                        checked={selectedSensor.includes(item)}
+                        sx={{ mr: 1 }}
+                      />
+                      Sensor {item}
+                    </Option>
+                  ))}
+                </Select>
+              </Stack>
+              <Stack sx={{ m: 1, width: 100 }}>
+                <Select
+                  multiple
                   size="sm"
-                  checked={selectedAxis.includes("all")}
-                  sx={{ mr: 1 }}
-                />
-                All Axis
-              </Option>
-              <Option value="x">
-                <Checkbox
-                  size="sm"
-                  checked={selectedAxis.includes("x")}
-                  sx={{ mr: 1 }}
-                />
-                x
-              </Option>
-              <Option value="y">
-                <Checkbox
-                  size="sm"
-                  checked={selectedAxis.includes("y")}
-                  sx={{ mr: 1 }}
-                />
-                y
-              </Option>
-              <Option value="z">
-                <Checkbox
-                  size="sm"
-                  checked={selectedAxis.includes("z")}
-                  sx={{ mr: 1 }}
-                />
-                z
-              </Option>
-            </Select>
-          </Stack>  </> :""}
+                  value={selectedAxis}
+                  onChange={handleChangeAxis}
+                >
+                  <Option value="all">
+                    <Checkbox
+                      size="sm"
+                      checked={selectedAxis.includes("all")}
+                      sx={{ mr: 1 }}
+                    />
+                    All Axis
+                  </Option>
+                  <Option value="x">
+                    <Checkbox
+                      size="sm"
+                      checked={selectedAxis.includes("x")}
+                      sx={{ mr: 1 }}
+                    />
+                    x
+                  </Option>
+                  <Option value="y">
+                    <Checkbox
+                      size="sm"
+                      checked={selectedAxis.includes("y")}
+                      sx={{ mr: 1 }}
+                    />
+                    y
+                  </Option>
+                  <Option value="z">
+                    <Checkbox
+                      size="sm"
+                      checked={selectedAxis.includes("z")}
+                      sx={{ mr: 1 }}
+                    />
+                    z
+                  </Option>
+                </Select>
+              </Stack>{" "}
+            </>
+          ) : (
+            ""
+          )}
         </div>
       </div>
 

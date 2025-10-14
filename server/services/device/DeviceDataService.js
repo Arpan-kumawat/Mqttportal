@@ -44,14 +44,15 @@ async function querySensorData( start = "-1h", end = "now()") {
 }
 
 function transformInfluxData(rawData) {
-  // Map: sensorId -> array of records
+  // Map: sensorId -> { history: [], gateway: string }
   const sensorMap = new Map();
 
   rawData.forEach(item => {
     const sensorId = Number(item.sensorId);
+    const gateway = item.gateway;
 
     if (!sensorMap.has(sensorId)) {
-      sensorMap.set(sensorId, []);
+      sensorMap.set(sensorId, { history: [], gateway }); // store gateway here
     }
 
     const record = {
@@ -90,13 +91,14 @@ function transformInfluxData(rawData) {
       };
     }
 
-    sensorMap.get(sensorId).push(record);
+    sensorMap.get(sensorId).history.push(record);
   });
 
-  // Convert Map to array of objects with sensorId and history array
-  const result = Array.from(sensorMap.entries()).map(([sensorId, history]) => ({
+  // Convert Map to array of objects with sensorId, history, and gateway
+  const result = Array.from(sensorMap.entries()).map(([sensorId, { history, gateway }]) => ({
     sensorId,
-    history, // array of { lastUpdated, gvib, sns_info }
+    history,
+    gateway,
   }));
 
   return result;
@@ -121,6 +123,7 @@ class DeviceDataService {
     try {
       const data = await querySensorData( startTime, endTime);
       const transformed = transformInfluxData(data);
+  
 
                         
       return  transformed

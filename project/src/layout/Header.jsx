@@ -1,10 +1,14 @@
 import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { LogOut, Menu, Bell, User, Brain, Zap } from 'lucide-react';
+import { Select, Option, Stack } from "@mui/joy";
 
 const Header = ({ onMenuToggle, isSidebarOpen, aiInsights,MenuPage }) => {
   const { user, logout } = useAuth();
   const activeAlerts = aiInsights?.alerts?.length || 0;
+  const [selectedSensor, setSelectedSensor] = React.useState("");
+
+
 
   return (
     <header className="bg-white border-b border-gray-200 h-16 flex items-center justify-between px-4 lg:px-6 shadow-sm">
@@ -33,9 +37,26 @@ const Header = ({ onMenuToggle, isSidebarOpen, aiInsights,MenuPage }) => {
 
       <div className="flex items-center gap-3">
         {/* AI Status Indicator */}
-        {/* <div className="hidden sm:flex items-center gap-2 px-3 py-1 bg-gradient-to-r from-purple-100 to-blue-100 rounded-full">
-          <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
-          <span className="text-xs font-medium text-purple-700">AI Active</span>
+        {/* <div className="hidden sm:flex items-center gap-2 px-3 py-1  rounded-full">
+               <span className="font-medium text-gray-700">Gateway:</span>
+              <Stack sx={{ minWidth: 100 }}>
+                <Select
+                  size="sm"
+                  defaultValue={"GW028"}
+                  placeholder="Select Gateway"
+                  value={selectedSensor}
+                  onChange={handleChange}
+                >
+                  {data?.gateway?.list?.map((item) => (
+                    <Option key={item?.gateway} value={item?.gateway}>
+                      {getGatewayName(item?.gateway)}
+                    </Option>
+                  ))}
+                  <Option disabled value="Vadodra">
+                    Vadodra
+                  </Option>
+                </Select>
+              </Stack>
         </div> */}
         
         <button className="p-2 rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors relative">
