@@ -24,7 +24,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     let gat = localStorage.getItem("GateWay");
-
+    console.log(gat)
     if (gat) {
       setSelectedSensor(gat);
     } else {
@@ -63,7 +63,7 @@ const Dashboard = () => {
         return "NBC Jaipur";
       case "GAZ":
         return "Ghaziabad";
-      case "Vadodra":
+      case "BAR":
         return "Vadodra";
       default:
         return id;
@@ -126,9 +126,7 @@ const Dashboard = () => {
                       {getGatewayName(item?.gateway)}
                     </Option>
                   ))}
-                  <Option disabled value="Vadodra">
-                    Vadodra
-                  </Option>
+                
                 </Select>
               </Stack>
               <span className="font-medium text-gray-700 ml-2">Uptime:</span>
@@ -151,40 +149,41 @@ const Dashboard = () => {
       )}
 
       {activeTab === "Health" && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <RealtimeChart
-            data={data?.revenue}
-            title="Revenue Analytics with Predictions"
-            color="#10b981"
-            format="currency"
-            predictions={data?.predictions?.revenue}
-            anomalies={getAnomalies("revenue")}
-          />
-          <RealtimeChart
-            data={data?.users}
-            title="User Analytics with Predictions"
-            color="#3b82f6"
-            format="number"
-            predictions={data?.predictions?.users}
-            anomalies={getAnomalies("users")}
-          />
-          <RealtimeChart
-            data={data?.orders}
-            title="Order Analytics with Predictions"
-            color="#8b5cf6"
-            format="number"
-            predictions={data?.predictions?.orders}
-            anomalies={getAnomalies("orders")}
-          />
-          <RealtimeChart
-            data={data?.conversion}
-            title="Conversion Rate with Predictions"
-            color="#f59e0b"
-            format="percentage"
-            predictions={data?.predictions?.conversion}
-            anomalies={getAnomalies("conversion")}
-          />
-        </div>
+        // <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        //   <RealtimeChart
+        //     data={data?.revenue}
+        //     title="Revenue Analytics with Predictions"
+        //     color="#10b981"
+        //     format="currency"
+        //     predictions={data?.predictions?.revenue}
+        //     anomalies={getAnomalies("revenue")}
+        //   />
+        //   <RealtimeChart
+        //     data={data?.users}
+        //     title="User Analytics with Predictions"
+        //     color="#3b82f6"
+        //     format="number"
+        //     predictions={data?.predictions?.users}
+        //     anomalies={getAnomalies("users")}
+        //   />
+        //   <RealtimeChart
+        //     data={data?.orders}
+        //     title="Order Analytics with Predictions"
+        //     color="#8b5cf6"
+        //     format="number"
+        //     predictions={data?.predictions?.orders}
+        //     anomalies={getAnomalies("orders")}
+        //   />
+        //   <RealtimeChart
+        //     data={data?.conversion}
+        //     title="Conversion Rate with Predictions"
+        //     color="#f59e0b"
+        //     format="percentage"
+        //     predictions={data?.predictions?.conversion}
+        //     anomalies={getAnomalies("conversion")}
+        //   />
+        // </div>
+        <></>
       )}
 
       {activeTab === "ai-predictions" && (

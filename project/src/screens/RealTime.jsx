@@ -1,12 +1,10 @@
-import React from 'react'
-import Sensor from '../Views/Dashboard/Sensor'
+import React from 'react';
+import Sensor from '../Views/Dashboard/Sensor';
 
-
-export default function RealTime() {
-     
+export default function RealTime({ onNewAlert }) {
   return (
-  <>
-    <Sensor />
-  </>
-  )
+    <>
+      <Sensor onNewAlert={onNewAlert} />
+    </>
+  );
 }

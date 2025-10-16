@@ -55,7 +55,7 @@ export default function OverView({ filterData, isConnected, aiInsights }) {
         />
         <MetricCard
           title="Gateway Temp"
-          value={`${(viewData.gw_info?.temperature).toFixed(3)}°C`}
+          value={`${(viewData?.gw_info?.temperature).toFixed(3)}°C`}
           change={0}
           icon={<Thermometer className="h-6 w-6 text-white" />}
           color="bg-red-500"
@@ -63,7 +63,7 @@ export default function OverView({ filterData, isConnected, aiInsights }) {
         />
         <MetricCard
           title="Active Memory"
-          value={viewData.gw_info.active.toLocaleString()}
+          value={viewData?.gw_info.active.toLocaleString()}
           change={0}
           icon={<HardDrive className="h-6 w-6 text-white" />}
           color="bg-purple-500"
@@ -72,7 +72,7 @@ export default function OverView({ filterData, isConnected, aiInsights }) {
         />
         <MetricCard
           title="Total Drive Used"
-          value={`${viewData.gw_info.drv_usd.toFixed(2)} GB`}
+          value={`${viewData?.gw_info.drv_usd.toFixed(2)} GB`}
           change={0}
           icon={<Database className="h-6 w-6 text-white" />}
           color="bg-orange-500"

@@ -216,6 +216,7 @@ mqttClient.on("message", (topic, message) => {
     // Detect gateway from topic (robust contains check)
     if (topic.includes("/GAZ/") || topic.includes("GAZ/")) gateway = "GAZ";
     else if (topic.includes("/GW028/") || topic.includes("GW028/")) gateway = "GW028";
+    else if (topic.includes("/BAR/") || topic.includes("BAR/")) gateway = "BAR";
 
     // GW_info messages are gateway-level and handled separately
     if (topic.endsWith("GW_info")) {

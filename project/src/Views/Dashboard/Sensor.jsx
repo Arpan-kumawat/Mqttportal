@@ -4,7 +4,7 @@ import RealtimeGraph from "../../components/RealtimeGraph";
 import { Select, Option, Checkbox, FormLabel, Stack } from "@mui/joy";
 import { useWebSocket } from "../../hooks/useWebSocket";
 
-export default function Sensor() {
+export default function Sensor({onNewAlert}) {
   const { data, isConnected, aiInsights } = useWebSocket();
 
   const getAnomalies = (type) => {
@@ -206,6 +206,7 @@ export default function Sensor() {
               color="#ef4444"
               format="vibration"
               type="velocity"
+              onNewAlert={onNewAlert} 
               anomalies={getAnomalies("vibration")}
             />
           </div>
@@ -218,6 +219,7 @@ export default function Sensor() {
               color="#6366f1"
               type="acceleration"
               format="acceleration"
+              onNewAlert={onNewAlert} 
               anomalies={getAnomalies("acceleration")}
             />
           </div>

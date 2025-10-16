@@ -1,3 +1,4 @@
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -19,6 +20,7 @@ const AppRoutes = () => {
   const { user } = useAuth();
   const localUser = JSON.parse(localStorage.getItem("user"));
   const isLoggedIn = user || localUser;
+  const [alerts, setAlerts] = React.useState([]);
 
   return (
     <Router>
@@ -35,11 +37,14 @@ const AppRoutes = () => {
 
         {/* Protected routes wrapped in MainLayout */}
         <Route element={<PrivateRoute />}>
-          <Route element={<MainLayout />}>
+       <Route element={<MainLayout alerts={alerts} setAlerts={setAlerts} />}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/setting" element={<Setting />} />
             <Route path="/user" element={<User />} />
-            <Route path="/real-time" element={<RealTime />} />
+            <Route
+      path="/real-time"
+      element={<RealTime onNewAlert={(alert) => setAlerts((prev) => [alert, ...prev])} />}
+    />
              <Route path="/history" element={<History />} />
             <Route path="/sensor-info" element={<SensorInfo />} />
             {/* add more protected routes here */}

@@ -10,8 +10,9 @@ import {
   Legend,
   ReferenceLine,
 } from "recharts";
-import { Play ,Pause } from 'lucide-react';
+import { Play, Pause } from "lucide-react";
 import { set } from "date-fns";
+import "../index.css";
 
 const RealtimeGraph = ({
   title,
@@ -23,39 +24,74 @@ const RealtimeGraph = ({
   selectedAxis,
   data,
   selectedSensor,
+  onNewAlert,
   sensors = [],
 }) => {
   const [combinedData, setCombinedData] = useState([]);
   const [isPaused, setIsPaused] = useState(false); // 👈 new state
   const isMounted = useRef(true);
   const updateTimeout = useRef(null);
-// --- Baseline drag state ---
-const [baselineY, setBaselineY] = useState(1);
-const [dragging, setDragging] = useState(false);
-const chartRef = useRef(null);
 
-const handleMouseDown = (e) => {
-  setDragging(true);
-};
+const [activeCrossings, setActiveCrossings] = useState(new Set());
 
-const handleMouseUp = () => {
-  setDragging(false);
-};
 
-const handleMouseMove = (e) => {
-  if (!dragging || !chartRef.current) return;
 
-  const chartRect = chartRef.current.getBoundingClientRect();
-  const chartHeight = chartRect.height;
-  const offsetY = e.clientY - chartRect.top;
+  // --- Baseline drag state ---
+  const [baselineY, setBaselineY] = useState(1);
+  const [dragging, setDragging] = useState(false);
+  const chartRef = useRef(null);
 
-  // Convert mouse Y position to approximate chart Y value
-  // You can adjust scaling as needed
-  const yPercent = 1 - offsetY / chartHeight;
-  const newBaseline = yPercent * 10; // Scale (depends on your data range)
-  setBaselineY(newBaseline);
-};
+  const handleMouseDown = (e) => {
+    setDragging(true);
+  };
 
+  const handleMouseUp = () => {
+    setDragging(false);
+  };
+
+  const handleMouseMove = (e) => {
+    if (!dragging || !chartRef.current || !combinedData.length) return;
+
+    const chartRect = chartRef.current.getBoundingClientRect();
+    const chartHeight = chartRect.height;
+    const offsetY = e.clientY - chartRect.top;
+
+    const values = displayedSeriesKeys.flatMap((key) =>
+      combinedData.map((d) => d[key]).filter((v) => v != null)
+    );
+    if (!values.length) return;
+
+    const minY = Math.min(...values);
+    const maxY = Math.max(...values);
+
+    const yPercent = 1 - offsetY / chartHeight;
+    const newBaseline = minY + yPercent * (maxY - minY);
+
+    setBaselineY(newBaseline);
+  };
+
+  // const handleMouseMove = (e) => {
+  //   if (!dragging || !chartRef.current || !combinedData.length) return;
+
+  //   const chartRect = chartRef.current.getBoundingClientRect();
+  //   const chartHeight = chartRect.height;
+  //   const offsetY = e.clientY - chartRect.top;
+
+  //   // Find min and max of displayed Y-axis data
+  //   const values = displayedSeriesKeys.flatMap((key) =>
+  //     combinedData.map((d) => d[key]).filter((v) => v != null)
+  //   );
+  //   if (!values.length) return;
+
+  //   const minY = Math.min(...values);
+  //   const maxY = Math.max(...values);
+
+  //   // Convert mouse Y to Y-axis value
+  //   const yPercent = 1 - offsetY / chartHeight; // 0 at bottom, 1 at top
+  //   const newBaseline = minY + yPercent * (maxY - minY);
+
+  //   setBaselineY(newBaseline);
+  // };
 
   // cleanup on unmount
   useEffect(() => {
@@ -153,7 +189,9 @@ const handleMouseMove = (e) => {
 
         // forward-fill missing values
         const allKeys = Array.from(
-          new Set(arr.flatMap((p) => Object.keys(p).filter((k) => k !== "timestamp")))
+          new Set(
+            arr.flatMap((p) => Object.keys(p).filter((k) => k !== "timestamp"))
+          )
         );
         const lastSeen = {};
         const filled = arr.map((pt) => {
@@ -228,10 +266,53 @@ const handleMouseMove = (e) => {
   }, [combinedData, selectedSensor, selectedAxis, type]);
 
 
-  useEffect(() => {
-   setBaselineY(0);
-  }, [selectedSensor])
+
+  // 🔔 Detect when any data crosses the baseline
+
+  // Track last alert time per sensor to prevent repeated alerts
+const lastAlertedRef = useRef({});
+
+useEffect(() => {
+  if (!combinedData.length || !displayedSeriesKeys.length) return;
+
+  const lastIndex = combinedData.length - 1;
+  const prevIndex = lastIndex - 1;
+  if (prevIndex < 0) return;
+
+  displayedSeriesKeys.forEach((key) => {
+    const prevVal = combinedData[prevIndex]?.[key];
+    const currVal = combinedData[lastIndex]?.[key];
+    if (prevVal == null || currVal == null) return;
+
+    const crossed =
+      (prevVal < baselineY && currVal >= baselineY) ||
+      (prevVal > baselineY && currVal <= baselineY);
+
+    if (crossed) {
+      const now = Date.now();
+      const lastTime = lastAlertedRef.current[key] || 0;
+      const cooldown = 10000; // 10 seconds
+
+      if (now - lastTime > cooldown) {
+        lastAlertedRef.current[key] = now;
+
+        const alertData = {
+          key,
+          value: currVal,
+          baseline: baselineY,
+          timestamp: new Date().toLocaleTimeString(),
+        };
+        onNewAlert?.(alertData);
+      }
+    }
+  });
+}, [combinedData, baselineY, displayedSeriesKeys]);
+
   
+
+  useEffect(() => {
+    setBaselineY(0);
+  }, [selectedSensor]);
 
   const palette = [
     "#3b82f6",
@@ -290,73 +371,88 @@ const handleMouseMove = (e) => {
     return null;
   };
 
-
-  
   // memoize the chart to avoid rerender spikes
   const chartContent = useMemo(
     () => (
-    <div
-  ref={chartRef}
-  onMouseMove={handleMouseMove}
-  onMouseUp={handleMouseUp}
-  onMouseLeave={handleMouseUp}
-  style={{ height: "16rem", position: "relative" }}
->
-  <ResponsiveContainer width="100%" height="100%">
-    <LineChart
-      data={combinedData}
-    
-      margin={{ top: 5, right: 80, left: 20, bottom: 5 }} 
-      onMouseDown={handleMouseDown} // Start dragging inside chart
-    >
-      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-      <XAxis dataKey="timestamp" tickFormatter={formatTime} stroke="#6b7280" fontSize={12} />
-      <YAxis
-        stroke="#6b7280"
-        fontSize={12}
-        label={{
-          value: unitLabel,
-          position: "insideLeft",
-        }}
-      />
-      {!dragging && <Tooltip content={<CustomTooltip />} />}
-      <Legend verticalAlign="top" height={36} wrapperStyle={{ fontSize: 10 }} />
+      <div
+        ref={chartRef}
+        className="no-select"
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+        style={{ height: "16rem", position: "relative" }}
+      >
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart
+            data={combinedData}
+            margin={{ top: 5, right: 80, left: 20, bottom: 5 }}
+            onMouseDown={handleMouseDown} // Start dragging inside chart
+          >
+            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+            <XAxis
+              dataKey="timestamp"
+              tickFormatter={formatTime}
+              stroke="#6b7280"
+              fontSize={12}
+            />
+            <YAxis
+              stroke="#6b7280"
+              fontSize={12}
+              label={{
+                value: unitLabel,
+                position: "insideLeft",
+              }}
+            />
+            {!dragging && <Tooltip content={<CustomTooltip />} />}
+            <Legend
+              verticalAlign="top"
+              height={36}
+              wrapperStyle={{ fontSize: 10 }}
+            />
 
-      {anomalyTimestamps.map((t, i) => (
-        <ReferenceLine key={i} x={t} stroke="#f59e0b" strokeDasharray="2 2" />
-      ))}
+            {anomalyTimestamps.map((t, i) => (
+              <ReferenceLine
+                key={i}
+                x={t}
+                stroke="#f59e0b"
+                strokeDasharray="2 2"
+              />
+            ))}
 
-      {/* ✅ Draggable Baseline */}
-      <ReferenceLine
-        y={baselineY}
-        stroke="red"
-        strokeWidth={3}
-        ifOverflow="visible"
-        strokeDasharray="4 4"
-        label={{
-          value: `Baseline: ${baselineY.toFixed(2)}`,
-          position: "right",
-        }}
-        cursor="row-resize"
-      />
+            {/* ✅ Draggable Baseline */}
 
-      {displayedSeriesKeys.map((key, i) => (
-        <Line
-          key={key}
-          type="monotone"
-          dataKey={key}
-          name={key}
-          stroke={palette[i % palette.length]}
-          strokeWidth={1}
-          dot={false}
-          isAnimationActive={false}
-          connectNulls
-        />
-      ))}
-    </LineChart>
-  </ResponsiveContainer>
-</div>
+            {type != "temperature" ? (
+              <ReferenceLine
+                y={baselineY}
+                stroke="red"
+                strokeWidth={3}
+                strokeDasharray="4 4"
+                label={{
+                  value: `Base: ${baselineY.toFixed(2)}`,
+                  position: "right",
+                }}
+                cursor="row-resize"
+              />
+            ) : (
+              ""
+            )}
 
+            {displayedSeriesKeys.map((key, i) => (
+              <Line
+                key={key}
+                type="monotone"
+                dataKey={key}
+                name={key}
+                stroke={palette[i % palette.length]}
+                strokeWidth={1}
+                dot={false}
+                isAnimationActive={false}
+                connectNulls
+              />
+            ))}
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
     ),
     [combinedData, displayedSeriesKeys, anomalies, unitLabel]
   );
@@ -372,7 +468,11 @@ const handleMouseMove = (e) => {
                  "  border border-gray-300 text-gray-700 bg-gray-500"
             `}
           >
-            {isPaused ? <Play strokeWidth={"1px"}/> : <Pause strokeWidth={"1px"}/>}
+            {isPaused ? (
+              <Play strokeWidth={"1px"} />
+            ) : (
+              <Pause strokeWidth={"1px"} />
+            )}
           </button>
           {predictions.length > 0 && (
             <div className="flex items-center gap-1 text-xs text-purple-600 bg-purple-50 px-2 py-1 rounded-full">
@@ -406,7 +506,6 @@ export default React.memo(RealtimeGraph, (prev, next) => {
     prev.data === next.data
   );
 });
-
 
 // import React, { useEffect, useState, useMemo } from "react";
 // import {
@@ -456,8 +555,6 @@ export default React.memo(RealtimeGraph, (prev, next) => {
 //   };
 
 //   const [combinedData, setCombinedData] = useState([]);
-
-
 
 //   const formatTime = (timestamp) => {
 //     if (!timestamp) return "-";
@@ -733,7 +830,7 @@ export default React.memo(RealtimeGraph, (prev, next) => {
 //               tickFormatter={formatTime}
 //               stroke="#6b7280"
 //               fontSize={12}
-           
+
 //             />
 //             <YAxis
 //               // tickFormatter={formatValue}

@@ -8,6 +8,15 @@
     display: none !important;
 }
 
+
+/* Prevent unwanted text or element selection during baseline drag */
+.no-select {
+  user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+}
+
+
 .recharts-tooltip-wrapper{
   z-index: 99999;
 }
