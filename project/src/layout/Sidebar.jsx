@@ -32,7 +32,9 @@ const Sidebar = ({ isOpen, onClose }) => {
     const map = {
       "/dashboard": "Dashboard",
       "/real-time": "Real Time",
+       "/fft": "FFT",
       "/history": "History",
+       "/alarm": "Alarm",
       "/user": "Users",
       "/sensor-info": "Sensors Info",
       "/setting": "Settings",
@@ -45,13 +47,14 @@ const Sidebar = ({ isOpen, onClose }) => {
   const menuItems = [
     { icon: Home, label: "Dashboard", route: "dashboard" },
     { icon: BarChart3, label: "Real Time", route: "real-time" },
+     { icon: BarChart3, label: "FFT", route: "fft" },
     // { icon: Brain, label: 'AI Predictions' },
     { icon: History, label: "History", route: "history" },
     { icon: Users, label: "Users", route: "user" },
     // { icon: ShoppingCart, label: 'Orders' },
     { icon: Thermometer, label: "Sensors Info", route: "sensor-info" },
     { icon: Laptop, label: "Gateway Setup" },
-    { icon: BellRing, label: "Alarm" },
+    { icon: BellRing, label: "Alarm",route:"alarm" },
     { icon: Settings, label: "Settings", route: "setting" },
   ];
 

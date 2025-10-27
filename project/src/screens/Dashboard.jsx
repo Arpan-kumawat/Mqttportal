@@ -10,8 +10,11 @@ const Dashboard = () => {
   const [selectedSensor, setSelectedSensor] = useState("");
   const { data, isConnected, aiInsights } = useWebSocket();
 
+
+
+
   const filterData = useMemo(() => {
-    const sensor = selectedSensor || "GW028"; // fallback
+    const sensor = selectedSensor 
     if (!data?.gateway?.list) return { gateway: { list: [] }, ...data };
     return {
       ...data,
@@ -23,14 +26,17 @@ const Dashboard = () => {
   }, [data, selectedSensor]);
 
   useEffect(() => {
-    let gat = localStorage.getItem("GateWay");
-    console.log(gat)
+     let gat = localStorage.getItem("GateWay");
+   
+     if(data?.gateway?.list){
     if (gat) {
       setSelectedSensor(gat);
     } else {
-      setSelectedSensor("GW028");
+        localStorage.setItem("GateWay", data?.gateway?.list[0]?.gateway);
+      setSelectedSensor(data?.gateway?.list[0]?.gateway);
     }
-  }, []);
+  }
+  }, [data?.gateway?.list]);
 
   // Handle gateway selection change
   const handleChange = (event, newValue) => {
@@ -116,7 +122,6 @@ const Dashboard = () => {
               <Stack sx={{ minWidth: 100 }}>
                 <Select
                   size="sm"
-                  defaultValue={"GW028"}
                   placeholder="Select Gateway"
                   value={selectedSensor}
                   onChange={handleChange}

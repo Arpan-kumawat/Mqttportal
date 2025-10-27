@@ -55,7 +55,7 @@ export default function OverView({ filterData, isConnected, aiInsights }) {
         />
         <MetricCard
           title="Gateway Temp"
-          value={`${(viewData?.gw_info?.temperature).toFixed(3)}°C`}
+          value={`${(viewData?.gw_info?.temperature)?.toFixed(3)|| 0 }°C`}
           change={0}
           icon={<Thermometer className="h-6 w-6 text-white" />}
           color="bg-red-500"

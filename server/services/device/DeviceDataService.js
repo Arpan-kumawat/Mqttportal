@@ -89,6 +89,11 @@ function transformInfluxData(rawData) {
         group: item.group ? Number(item.group) : null,
         temperature: item.temperature ?? 0,
       };
+    }  else if (item.topic?.endsWith("acce")) {
+      record.acce = {
+        sensorType: item.sensorType,
+        sensorId: sensorId,
+      };
     }
 
     sensorMap.get(sensorId).history.push(record);

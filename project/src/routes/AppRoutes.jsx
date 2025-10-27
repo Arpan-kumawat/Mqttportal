@@ -15,6 +15,8 @@ import User from "../screens/User.jsx";
 import SensorInfo from "../screens/SensorInfo.jsx";
 import RealTime from "../screens/RealTime.jsx";
 import History from "../screens/History.jsx";
+import FFT from "../screens/FFT.jsx";
+import Alarm from "../screens/Alarm.jsx";
 
 const AppRoutes = () => {
   const { user } = useAuth();
@@ -37,15 +39,21 @@ const AppRoutes = () => {
 
         {/* Protected routes wrapped in MainLayout */}
         <Route element={<PrivateRoute />}>
-       <Route element={<MainLayout alerts={alerts} setAlerts={setAlerts} />}>
+          <Route element={<MainLayout alerts={alerts} setAlerts={setAlerts} />}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/setting" element={<Setting />} />
             <Route path="/user" element={<User />} />
             <Route
-      path="/real-time"
-      element={<RealTime onNewAlert={(alert) => setAlerts((prev) => [alert, ...prev])} />}
-    />
-             <Route path="/history" element={<History />} />
+              path="/real-time"
+              element={
+                <RealTime
+                  onNewAlert={(alert) => setAlerts((prev) => [alert, ...prev])}
+                />
+              }
+            />
+            <Route path="/fft" element={<FFT />} />
+              <Route path="/alarm" element={<Alarm />} />
+            <Route path="/history" element={<History />} />
             <Route path="/sensor-info" element={<SensorInfo />} />
             {/* add more protected routes here */}
           </Route>
