@@ -7,6 +7,7 @@ const Device = new DeviceController();
 
 router.post("/data", Device.data);
 router.post("/history-data", Device.GetHistoryData);
+router.post("/SVTV_alarm", Device.SvtvAlarm);
 
 router.use("/Graphdata", router);
 

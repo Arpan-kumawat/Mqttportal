@@ -12,7 +12,7 @@ import {
   Thermometer,
   Activity,
   Zap,
-  Laptop,
+  Laptop,Timer,
   History,
   BellRing,
 } from "lucide-react";
@@ -35,7 +35,8 @@ const Sidebar = ({ isOpen, onClose }) => {
        "/fft": "FFT",
       "/history": "History",
        "/alarm": "Alarm",
-      "/user": "Users",
+         "/Timer": "Timer Setup",
+      // "/user": "Users",
       "/sensor-info": "Sensors Info",
       "/setting": "Settings",
     };
@@ -50,7 +51,8 @@ const Sidebar = ({ isOpen, onClose }) => {
      { icon: BarChart3, label: "FFT", route: "fft" },
     // { icon: Brain, label: 'AI Predictions' },
     { icon: History, label: "History", route: "history" },
-    { icon: Users, label: "Users", route: "user" },
+       { icon: Timer, label: "Timer Setup", route: "timer" },
+    // { icon: Users, label: "Users", route: "user" },
     // { icon: ShoppingCart, label: 'Orders' },
     { icon: Thermometer, label: "Sensors Info", route: "sensor-info" },
     { icon: Laptop, label: "Gateway Setup" },

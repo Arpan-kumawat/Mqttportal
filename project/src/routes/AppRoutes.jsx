@@ -17,6 +17,7 @@ import RealTime from "../screens/RealTime.jsx";
 import History from "../screens/History.jsx";
 import FFT from "../screens/FFT.jsx";
 import Alarm from "../screens/Alarm.jsx";
+import TimerSetup from "../screens/TimerSetup.jsx";
 
 const AppRoutes = () => {
   const { user } = useAuth();
@@ -52,6 +53,7 @@ const AppRoutes = () => {
               }
             />
             <Route path="/fft" element={<FFT />} />
+             <Route path="/timer" element={<TimerSetup />} />
               <Route path="/alarm" element={<Alarm />} />
             <Route path="/history" element={<History />} />
             <Route path="/sensor-info" element={<SensorInfo />} />

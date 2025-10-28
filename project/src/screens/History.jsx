@@ -104,6 +104,7 @@ export default function History() {
       const res = await getHistoryData({
         from: fromDate.toISOString(),
         to: toDate.toISOString(),
+        gateway:selectedGatwat
       });
 
       const rawData = res.data;

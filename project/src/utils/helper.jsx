@@ -1,6 +1,6 @@
 import axios from "axios";
 import { apiPost } from "../api/ServiceManager";
-import { AUTH_USER, CREATE_EMP, HISTORY } from "./constant";
+import { AUTH_USER, CREATE_EMP, HISTORY, SAVE_V_ALARM } from "./constant";
 
 let optionAxios = {
   headers: {
@@ -58,6 +58,18 @@ const add_emp = async (input) => {
     });
 };
 
+const save_svtv_alarm = async (input) => {
+  input = { ...input };
+  return await axios
+    .post(SAVE_V_ALARM, input, optionAxios)
+    .then(function (resp) {
+      return resp;
+    })
+    .catch((error) => {
+      console.log(error);
+    });
+};
+
 const isLogin = () => {
   let user = localStorage.getItem("AUTH_DATA");
   //console.log(user)
@@ -90,5 +102,5 @@ export {
   toSnakeCase,
   getUserPermission,
   getHistoryData,
-  add_emp,
+  add_emp,save_svtv_alarm
 };

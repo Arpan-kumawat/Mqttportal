@@ -3,15 +3,30 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import { useWebSocket } from "../hooks/useWebSocket";
 import { Select, Option, Checkbox, FormLabel, Stack } from "@mui/joy";
 import TextField from "@mui/material/TextField";
+import { save_svtv_alarm } from "../utils/helper";
+import AlertPopup from "../components/AlertPopup";
 
 export default function AlarmPage() {
   const { data } = useWebSocket();
+  const [selectedSensor, setSelectedSensor] = useState("");
+  const [loading, setLoading] = useState(false);
+    const [showAlert, setShowAlert] = useState(false);
 
   let selectedGatwat = localStorage.getItem("GateWay");
 
   let filterSensor = data?.sensor?.list?.filter(
     (e) => e?.gateway == selectedGatwat
   );
+
+  const alertData = {
+    pumpName: "Supply Pump 3",
+    parameterName: "Vibration X Front",
+    lsl: 0,
+    value: 8.15,
+    usl: 7,
+    message: "VIBRATION X FRONT VALUE IS MORE THAN THE USL VALUE",
+  };
+
 
   const [svtaAlarm, setSvtaAlarm] = useState({
     group_id: null,
@@ -27,12 +42,13 @@ export default function AlarmPage() {
 
   const [svtvAlarm, setSvtvAlarm] = useState({
     sensor_id: null,
-    x_velocity_rms: 0,
-    y_velocity_rms: 0,
-    z_velocity_rms: 0,
-    x_acceleration_rms: 0,
-    y_acceleration_rms: 0,
-    z_acceleration_rms: 0,
+    selectedGatwat: selectedGatwat,
+    vx: 0,
+    vy: 0,
+    vz: 0,
+    gx: 0,
+    gy: 0,
+    gz: 0,
     temp_upper_bound: 0,
     temp_lower_bound: 0,
     trigger_group_id: null,
@@ -76,21 +92,6 @@ export default function AlarmPage() {
     }
   };
 
-  const handleValueChange = (alarm, field, e) => {
-    console.log(alarm, field, e.target.value);
-    if (alarm === "svta") {
-      setSvtaAlarm((prev) => ({
-        ...prev,
-        [field]: Number((prev[field] - step).toFixed(1)),
-      }));
-    } else {
-      setSvtvAlarm((prev) => ({
-        ...prev,
-        [field]: Number((prev[field] - step).toFixed(1)),
-      }));
-    }
-  };
-
   const handleSVTAConfirm = async () => {
     const { error } = true;
     if (error) {
@@ -100,12 +101,19 @@ export default function AlarmPage() {
     }
   };
 
-  const handleSVTVConfirm = async () => {
-    const { error } = true;
-    if (error) {
-      console.error("Error saving SVT-V alarm:", error);
-    } else {
-      alert("SVT-V alarm configuration saved successfully!");
+  const handleSVTVConfirm = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const res = await save_svtv_alarm(svtvAlarm);
+
+      if (res?.data?.status) {
+        alert("SVT-V alarm configuration saved successfully!");
+      }
+    } catch (error) {
+      console.log({ text: error.message || "Failed to create user" });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -177,7 +185,7 @@ export default function AlarmPage() {
                 <div className="flex items-center gap-3">
                   <TextField
                     size="small"
-                      inputProps={{ maxLength: 2 }}
+                    inputProps={{ maxLength: 2 }}
                     value={svtaAlarm[item.field] ?? ""}
                     onChange={(e) => {
                       const newValue = Number(e.target.value);
@@ -223,14 +231,22 @@ export default function AlarmPage() {
           <h2 className="text-2xl font-semibold text-gray-900 mb-6">
             SVT-V Series Alarm
           </h2>
-
+   {showAlert && (
+        <AlertPopup data={alertData} onClose={() => setShowAlert(false)} />
+      )}
           <div className="mb-2">
             <Stack sx={{ mr: 0 }}>
               <Select
                 placeholder="Select Sensor"
                 size="sm"
-                // value={selectedSensor}
-                // onChange={handleChange}
+                value={selectedSensor}
+                onChange={(e, newValue) => {
+                  setSelectedSensor(newValue);
+                  setSvtvAlarm((prev) => ({
+                    ...prev,
+                    sensor_id: newValue,
+                  }));
+                }}
               >
                 {filterSensor?.map((item) => (
                   <Option key={item?.sensorId} value={item?.sensorId}>
@@ -243,12 +259,12 @@ export default function AlarmPage() {
 
           <div className="space-y-2">
             {[
-              { label: "X-axis velocity RMS", field: "x_velocity_rms" },
-              { label: "Y-axis velocity RMS", field: "y_velocity_rms" },
-              { label: "Z-axis velocity RMS", field: "z_velocity_rms" },
-              { label: "X-axis acceleration RMS", field: "x_acceleration_rms" },
-              { label: "Y-axis acceleration RMS", field: "y_acceleration_rms" },
-              { label: "Z-axis acceleration RMS", field: "z_acceleration_rms" },
+              { label: "X-axis velocity RMS", field: "vx" },
+              { label: "Y-axis velocity RMS", field: "vy" },
+              { label: "Z-axis velocity RMS", field: "vz" },
+              { label: "X-axis acceleration RMS", field: "gx" },
+              { label: "Y-axis acceleration RMS", field: "gy" },
+              { label: "Z-axis acceleration RMS", field: "gz" },
               { label: "Temperature upper bound", field: "temp_upper_bound" },
               { label: "Temperature lower bound", field: "temp_lower_bound" },
             ].map((item) => (
@@ -261,7 +277,7 @@ export default function AlarmPage() {
                 </p>
                 <div className="flex items-center gap-3">
                   <TextField
-                       inputProps={{ maxLength: 2 }}
+                    inputProps={{ maxLength: 2 }}
                     size="small"
                     value={svtvAlarm[item.field] ?? ""}
                     onChange={(e) => {
@@ -305,6 +321,7 @@ export default function AlarmPage() {
           </div>
 
           <button
+            disabled={loading}
             onClick={handleSVTVConfirm}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3.5 rounded-md mt-2 transition-colors text-sm uppercase tracking-wide"
           >

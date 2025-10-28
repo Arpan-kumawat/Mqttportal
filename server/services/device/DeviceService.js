@@ -181,7 +181,6 @@ function parseAcceData(message) {
   if (![65, 245].includes(len)) throw new Error(`Unexpected ACCE payload length: ${len}`);
 
   const sensorType = buf.readUInt8(0);
-   const sensorType1 = buffer[0];
   const sensorId = buf.readUInt16BE(1);
 
   const SCALE_MAP = {
@@ -195,19 +194,6 @@ function parseAcceData(message) {
     0x03: 1.9531e-3,
   };
   const scale = SCALE_MAP[sensorType] || 0.0003944994;
-
-    const sensorTypeMap = {
-    0x00: "SVT200-T temperature sensor",
-    0x01: "SVT200-V real-time vibration & temperature sensor",
-    0x02: "SVT300-V real-time vibration & temperature sensor",
-    0x03: "SVT400-V real-time vibration & temperature sensor",
-    0x10: "SVT200-A sensor acceleration",
-    0x11: "SVT200-A sensor temperature",
-    0x20: "SVT300-A vibration sensor acceleration",
-    0x21: "SVT300-A vibration sensor temperature",
-    0x30: "SVT400-A vibration sensor acceleration",
-  };
-
 
   const samples = [];
   const dataEnd = len - 2;
@@ -249,8 +235,7 @@ function parseAcceData(message) {
 
   return {
     sensorId,
-    // sensorType,
-        sensorType: sensorTypeMap[sensorType1] || "Unknown",
+    sensorType,
     scale,
     daqMode,
     daqModeName: DAQ_MODE_MAP[daqMode] || "Unknown",
@@ -314,6 +299,61 @@ function formatMqttData(mqttDataLocal, gatewayInfoArr) {
   return { sensors, unknown, gateways: gatewayInfoArr || [], system_active };
 }
 
+// async function formatMqttData(mqttDataLocal, gatewayInfoArr) {
+//   const sensors = [];
+//   let unknown = null;
+//   let system_active = false;
+
+//   // Create DeviceDataService instance for fetching alarms
+//   const deviceDataService = new DeviceDataService();
+//   const svtvAlarms = await deviceDataService.GetSvtvAlarm(); // from Mongo
+
+//   Object.values(mqttDataLocal).forEach((sensor) => {
+//     if (sensor.sensorId === "unknown") unknown = sensor;
+//     else sensors.push(sensor);
+//   });
+
+//   sensors.sort((a, b) => a.sensorId - b.sensorId);
+//   if ((gatewayInfoArr && gatewayInfoArr.length > 0) || sensors.length > 0) system_active = true;
+
+//   // 🚨 Check alarms for each sensor
+//   for (const sensor of sensors) {
+//     const gvib = sensor.gvib;
+
+//     if (gvib?.vibrationVelocity) {
+//       const { x, y, z } = gvib.vibrationVelocity;
+
+//       // find alarm threshold for this sensor
+//       const alarm = svtvAlarms?.find((a) => a.sensor_id == sensor.sensorId);
+//       if (alarm) {
+//         const { vx, vy, vz } = alarm;
+
+//         // simple exceed logic
+//         if (x > vx || y > vy || z > vz) {
+//           console.log(
+//             `🚨 Alarm Triggered for Sensor ${sensor.sensorId}:`,
+//             `X=${x} (limit ${vx}), Y=${y} (limit ${vy}), Z=${z} (limit ${vz})`
+//           );
+
+//           // Optional: save triggered event to Mongo
+//           await deviceDataService.LogTriggeredAlarm({
+//             sensor_id: sensor.sensorId,
+//             values: { x, y, z },
+//             limits: { vx, vy, vz },
+//             triggeredAt: new Date(),
+//           });
+
+//           // Optional: trigger email
+//           // await sendMailNotification(sensor.sensorId, { x, y, z }, alarm);
+//         }
+//       }
+//     }
+//   }
+
+//   return { sensors, unknown, gateways: gatewayInfoArr || [], system_active };
+// }
+
+
 // -----------------------------------------------------------------------------
 // ⚙️ MQTT Message Handler
 // -----------------------------------------------------------------------------
@@ -327,6 +367,7 @@ mqttClient.on("message", (topic, message) => {
     if (topic.includes("/GAZ/") || topic.includes("GAZ/")) gateway = "GAZ";
     else if (topic.includes("/GW028/") || topic.includes("GW028/")) gateway = "GW028";
     else if (topic.includes("/BAR/") || topic.includes("BAR/")) gateway = "BAR";
+    else if (topic.includes("/R&D/") || topic.includes("R&D/")) gateway = "R&D";
 
     // Handle GW_info
     if (topic.endsWith("GW_info")) {
@@ -407,7 +448,11 @@ mqttClient.on("message", (topic, message) => {
               .floatField("version", parsedData.version || 0);
           } else if (topic.endsWith("acce")) {
             const { accel } = parsedData;
-            point.floatField("accx", accel.x).floatField("accy", accel.y).floatField("accz", accel.z);
+            point.floatField("accx", accel.x).floatField("accy", accel.y).floatField("accz", accel.z)
+            .floatField("daqRate", parsedData.daqRate)
+            .floatField("scale", parsedData.scale)
+            .floatField("daqMode", parsedData.daqMode)
+            ;
           } else if (topic.endsWith("atmp")) {
             point.floatField("temperature", parsedData.temperature || 0);
           }
@@ -431,12 +476,34 @@ mqttClient.on("message", (topic, message) => {
 // -----------------------------------------------------------------------------
 // ⚙️ Service + Helpers
 // -----------------------------------------------------------------------------
-class DeviceService {
-  constructor() { this._DeviceDataService = new DeviceDataService(); }
 
-  async GetData() { return formatMqttData(mqttData, gatewayInfoArray); }
-  async GetHistoryData(body) { return await this._DeviceDataService.GetHistoryData(body); }
+
+class DeviceService {
+  constructor() {
+    this._DeviceDataService = new DeviceDataService();
+  }
+
+  async GetData() {
+    return formatMqttData(mqttData, gatewayInfoArray);
+  }
+
+  async GetHistoryData(body) {
+    return await this._DeviceDataService.GetHistoryData(body);
+  }
+
+  async SvtvAlarm(body) {
+    const data = await this._DeviceDataService.SvtvAlarm(body);
+    return data;
+  }
+
+  async GetSvtvAlarm() {
+    const data = await this._DeviceDataService.GetSvtvAlarm();
+    return data;
+  }
+
+  
 }
+
 
 function addClient(ws) { if (!clients.includes(ws)) clients.push(ws); }
 function removeClient(ws) { const idx = clients.indexOf(ws); if (idx > -1) clients.splice(idx, 1); }
@@ -476,7 +543,3 @@ module.exports.addClient = addClient;
 module.exports.removeClient = removeClient;
 module.exports.getFormattedData = getFormattedData;
 module.exports.querySensorData = querySensorData;
-
-
-
-// Sensor Type Acce 

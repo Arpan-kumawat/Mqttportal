@@ -137,16 +137,22 @@ export default function Sensor({onNewAlert}) {
                   />
                   All Sensors
                 </Option>
-                {filterSensor?.map((item) => (
-                  <Option key={item?.sensorId} value={item?.sensorId}>
-                    <Checkbox
-                      size="sm"
-                      checked={selectedSensor.includes(item?.sensorId)}
-                      sx={{ mr: 1 }}
-                    />
-                    Sensor {item?.sensorId}
-                  </Option>
-                ))}
+             
+
+  {filterSensor
+    ?.filter((item) => !item?.acce) // ✅ checks if acce object exists
+    .map((item) => (
+      <Option key={item?.sensorId} value={item?.sensorId}>
+        <Checkbox
+          size="sm"
+          checked={selectedSensor.includes(item?.sensorId)}
+          sx={{ mr: 1 }}
+        />
+        Sensor {item?.sensorId}
+      </Option>
+    ))}
+
+
               </Select>
             </Stack>
 
